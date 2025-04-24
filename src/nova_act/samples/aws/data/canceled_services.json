@@ -1,0 +1,22 @@
+{
+  "Amazon OpenSearch Service": {
+    "status": "Canceled",
+    "canceled_on": "2025-04-15",
+    "cost_at_cancellation": 0.0
+  },
+  "AWS Skill Builder Individual": {
+    "status": "Canceled",
+    "canceled_on": "2025-04-15",
+    "cost_at_cancellation": 0.0
+  },
+  "AWS Cost Explorer": {
+    "status": "Canceled",
+    "canceled_on": "2025-04-15",
+    "cost_at_cancellation": 12.15
+  },
+  "Tax": {
+    "status": "Canceled",
+    "canceled_on": "2025-04-15",
+    "cost_at_cancellation": 3.82
+  }
+}

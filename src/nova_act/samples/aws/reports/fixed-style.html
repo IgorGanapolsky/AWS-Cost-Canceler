@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Cost Report</title>
+    <style>
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #1a1a1a;
+            line-height: 1.6;
+            background-color: #f8fafc;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Modern container with max-width */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        
+        /* Premium header styling */
+        header {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+        }
+        
+        header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+        
+        header .subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        header .generation-time {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+        
+        /* Modern card styling */
+        .card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+        
+        .card:hover {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            transform: translateY(-3px);
+        }
+        
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f9fafb;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .summary-item {
+            background-color: #f8fafc;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        
+        .summary-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+        }
+        
+        .summary-item h3 {
+            font-size: 1rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .summary-item .amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+        
+        /* Button styling */
+        .aws-console-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+        }
+        
+        .aws-console-button:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        
+        .cancel-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            background-color: #ef4444;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+        }
+        
+        .cancel-button:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Dropdown styling */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 250px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            right: 0;
+            top: 100%;
+            margin-top: 0.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .dropdown-content a {
+            color: #1a1a1a;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            display: block;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        
+        .dropdown-content a:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-content a:hover {
+            background-color: #f1f5f9;
+        }
+        
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.875rem;
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        /* Badge styling */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .badge-success {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .badge-warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .badge-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>AWS Cost Analysis</h1>
+            <p class="subtitle">2025-03-01 to 2025-04-14</p>
+            <p class="generation-time">Generated on 2025-04-14</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2>Summary</h2>
+            </div>
+            <div class="card-body">
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <h3>Last Month</h3>
+                        <div class="amount">$36.64</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <h3>Month-to-Date</h3>
+                        <div class="amount">$61.57</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <h3>Forecasted (30 Days)</h3>
+                        <div class="amount">$625.20</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2>Top Services by Cost</h2>
+            </div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Cost</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AWS Skill Builder Individual</td>
+                            <td>$58.00</td>
+                            <td>
+                                <a href="#" class="aws-console-button">AWS Console</a>
+                                <a href="#" class="cancel-button">Cancel Service</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Amazon OpenSearch Service</td>
+                            <td>$36.50</td>
+                            <td>
+                                <a href="#" class="aws-console-button">AWS Console</a>
+                                <div class="dropdown">
+                                    <button class="cancel-button dropdown-toggle" onclick="toggleDropdown(this)">Cancel Resource</button>
+                                    <div class="dropdown-content">
+                                        <a href="#">OpenSearch Domain 1</a>
+                                        <a href="#">OpenSearch Domain 2</a>
+                                        <a href="#">OpenSearch Domain 3</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Amazon Bedrock</td>
+                            <td>$0.12</td>
+                            <td>
+                                <a href="#" class="aws-console-button">AWS Console</a>
+                                <div class="dropdown">
+                                    <button class="cancel-button dropdown-toggle" onclick="toggleDropdown(this)">Cancel Resource</button>
+                                    <div class="dropdown-content">
+                                        <a href="#">Claude 3 Haiku</a>
+                                        <a href="#">Claude 3.7 Sonnet</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleDropdown(button) {
+            // Close all other open dropdowns first
+            document.querySelectorAll('.dropdown-content').forEach(function(content) {
+                if (content !== button.nextElementSibling) {
+                    content.style.display = 'none';
+                }
+            });
+            
+            // Toggle this dropdown
+            var content = button.nextElementSibling;
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+            
+            // Add click outside to close
+            document.addEventListener('click', function closeDropdown(e) {
+                if (!button.parentElement.contains(e.target)) {
+                    content.style.display = 'none';
+                    document.removeEventListener('click', closeDropdown);
+                }
+            });
+            
+            // Prevent the click from propagating to the document
+            event.stopPropagation();
+        }
+    </script>
+</body>
+</html>

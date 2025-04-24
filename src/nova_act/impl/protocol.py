@@ -87,7 +87,7 @@ def handle_nova_act_service_error(error_string: str, act: Act, backend_info: Bac
         if "DAILY_QUOTA_LIMIT_EXCEEDED" == error_dict.get("throttleType"):
             return ActRateLimitExceededError(
                 message=(
-                    "Daily API limit exceeded; please contact nova-act@amazon.com "
+                    "Daily API limit exceeded; please contact AWS Cost Canceler@amazon.com "
                     "with a use case justification if you need a higher daily limit"
                 ),
                 metadata=act.metadata,

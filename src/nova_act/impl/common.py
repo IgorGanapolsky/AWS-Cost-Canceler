@@ -14,7 +14,28 @@
 import json
 import os
 import pathlib
-from platform import freedesktop_os_release, system
+import platform
+from platform import system
+
+# Add compatibility for Python 3.9 which doesn't have freedesktop_os_release
+try:
+    from platform import freedesktop_os_release
+except ImportError:
+    # Fallback implementation for Python < 3.10
+    def freedesktop_os_release():
+        """Return operating system identification from os-release file."""
+        if os.path.exists('/etc/os-release'):
+            with open('/etc/os-release', 'r') as f:
+                lines = f.readlines()
+                info = {}
+                for line in lines:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    k, v = line.split('=', 1)
+                    info[k] = v.strip('"\'')
+                return info
+        return {}
 
 from nova_act.types.errors import UnsupportedOperatingSystem
 

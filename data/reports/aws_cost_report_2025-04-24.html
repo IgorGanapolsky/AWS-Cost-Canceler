@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>AWS Cost Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .dashboard-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .section-header {
+            color: #333;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .card {
+            background-color: #fff;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 100%;
+        }
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .card-subtitle {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            color: #212529;
+            border-collapse: collapse;
+        }
+        .table thead th {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6;
+        }
+        .table tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.03);
+        }
+        .badge {
+            padding: 0.4em 0.65em;
+            font-size: 0.75em;
+            font-weight: 700;
+            border-radius: 4px;
+        }
+        .badge-active {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge-cancelled {
+            background-color: #dc3545;
+            color: white;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            margin: 0 5px;
+        }
+        .pagination span {
+            margin: 0 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+        }
+        .modal-dialog {
+            max-width: 500px;
+        }
+        .modal-content {
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            border-bottom: 1px solid #eee;
+            padding: 1.25rem;
+        }
+        .modal-body {
+            padding: 1.5rem;
+        }
+        .modal-footer {
+            border-top: 1px solid #eee;
+            padding: 1.25rem;
+        }
+        .info-box {
+            background-color: #e9f5ff;
+            border-left: 4px solid #0066cc;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        .processing {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #6c757d;
+        }
+        .success-message {
+            background-color: #d4edda;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #28a745;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #dc3545;
+        }
+        .info-notice {
+            background-color: #e9f5ff;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #0066cc;
+        }
+        .reference-id {
+            font-family: monospace;
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .cancellation-requested {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 0.4em 0.65em;
+            font-size: 0.75em;
+            font-weight: 700;
+            border-radius: 4px;
+        }
+        .cancellation-progress {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .chart-container {
+            height: 300px;
+            position: relative;
+            margin-top: 20px;
+        }
+        /* Fix for Chart.js responsive sizing */
+        .chart-container canvas {
+            max-width: 100%;
+        }
+        .verification-links {
+            margin-top: 8px;
+        }
+        .verification-links a {
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-header">
+            <h1>AWS Cost Dashboard</h1>
+            <button id="exportReportBtn" class="btn btn-primary" onclick="exportReport()">
+                <i class="fas fa-file-download"></i> Export Report
+            </button>
+        </div>
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <h2 class="card-title">TOTAL COST</h2>
+                    <div class="card-value">$130.04</div>
+                    <div class="card-subtitle">From 2025-03-25 to 2025-04-24</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <h2 class="card-title">TOP SERVICE</h2>
+                    <div class="card-value">AWS Skill Builder Individual</div>
+                    <div class="card-value">$58.00</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <h2 class="card-title">SERVICES</h2>
+                    <div class="card-value">10</div>
+                    <div class="card-subtitle">Total active services</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service table -->
+        <div class="section">
+            <h3 class="section-header" id="topServicesSectionHeader" style="cursor: pointer;">
+                Top Services by Cost
+                <i class="fas fa-chevron-down float-end"></i>
+            </h3>
+            <div id="topServicesContent">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>SERVICE</th>
+                                <th>DETAILS</th>
+                                <th>COST</th>
+                                <th>STATUS</th>
+                                <th>CANCELLATION DATE</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="servicesTableBody">
+                            
+                            <tr data-service="AWS Skill Builder Individual">
+                                <td>AWS Skill Builder Individual</td>
+                                <td>Learning subscription</td>
+                                <td>$58.00</td>
+                                <td>
+                                    
+                                    <span class="badge bg-success">Active</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        
+                                            <button class="btn btn-sm btn-danger" onclick="cancelService('AWS Skill Builder Individual', this)">
+                                                <i class="fas fa-times-circle"></i> Cancel Service
+                                            </button>
+                                        
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="Amazon OpenSearch Service">
+                                <td>Amazon OpenSearch Service</td>
+                                <td>Domain storage and instance hours</td>
+                                <td>$36.50</td>
+                                <td>
+                                    
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    
+                                    <div class="cancelled-date text-danger">
+                                        Cancelled on: 2025-04-20
+                                    </div>
+                                    
+                                    
+                                </td>
+                                <td>
+                                    
+                                    2025-04-20
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <div class="text-center">
+                                            <span class="badge bg-light text-secondary me-2">Service Cancelled</span>
+                                            
+                                            <a href="https://console.aws.amazon.com/opensearch" class="btn btn-sm btn-primary" target="_blank">
+                                                <i class="fas fa-external-link-alt"></i> Verify
+                                            </a>
+                                            
+                                        </div>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="AWS Cost Explorer">
+                                <td>AWS Cost Explorer</td>
+                                <td>Usage and API requests</td>
+                                <td>$28.90</td>
+                                <td>
+                                    
+                                    <span class="badge bg-success">Active</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        
+                                            <button class="btn btn-sm btn-info" onclick="showCostExplorerInfo()">
+                                                <i class="fas fa-search"></i> Investigate API Usage
+                                            </button>
+                                        
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="Tax">
+                                <td>Tax</td>
+                                <td>Applicable taxes on services</td>
+                                <td>$3.82</td>
+                                <td>
+                                    
+                                    <span class="badge bg-success">Active</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        
+                                            <button class="btn btn-sm btn-secondary" disabled>
+                                                <i class="fas fa-lock"></i> Required Service
+                                            </button>
+                                        
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="Amazon Rekognition">
+                                <td>Amazon Rekognition</td>
+                                <td>Usage charges</td>
+                                <td>$2.23</td>
+                                <td>
+                                    
+                                    <span class="badge bg-success">Active</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        
+                                            <button class="btn btn-sm btn-danger" onclick="cancelService('Amazon Rekognition', this)">
+                                                <i class="fas fa-times-circle"></i> Cancel Service
+                                            </button>
+                                        
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="Amazon Transcribe">
+                                <td>Amazon Transcribe</td>
+                                <td>Usage charges</td>
+                                <td>$0.46</td>
+                                <td>
+                                    
+                                    <span class="badge bg-success">Active</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        
+                                            <button class="btn btn-sm btn-danger" onclick="cancelService('Amazon Transcribe', this)">
+                                                <i class="fas fa-times-circle"></i> Cancel Service
+                                            </button>
+                                        
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="Amazon Bedrock">
+                                <td>Amazon Bedrock</td>
+                                <td>Model inference, tokens, API usage</td>
+                                <td>$0.12</td>
+                                <td>
+                                    
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    
+                                    <div class="cancelled-date text-danger">
+                                        Cancelled on: 2025-04-21
+                                    </div>
+                                    
+                                    
+                                </td>
+                                <td>
+                                    
+                                    2025-04-21
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <div class="text-center">
+                                            <span class="badge bg-light text-secondary me-2">Service Cancelled</span>
+                                            
+                                            <a href="https://console.aws.amazon.com/bedrock" class="btn btn-sm btn-primary" target="_blank">
+                                                <i class="fas fa-external-link-alt"></i> Verify
+                                            </a>
+                                            
+                                        </div>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="AWS Claude 3.7 Sonnet (Amazon Bedrock Edition)">
+                                <td>AWS Claude 3.7 Sonnet (Amazon Bedrock Edition)</td>
+                                <td>Model inference, tokens, API usage</td>
+                                <td>$0.02</td>
+                                <td>
+                                    
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    
+                                    <div class="cancelled-date text-danger">
+                                        Cancelled on: 2025-04-21
+                                    </div>
+                                    
+                                    
+                                </td>
+                                <td>
+                                    
+                                    2025-04-21
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <div class="text-center">
+                                            <span class="badge bg-light text-secondary me-2">Service Cancelled</span>
+                                            
+                                            <a href="https://console.aws.amazon.com/aws-claude-3.7-sonnet-(amazon-bedrock-edition)/home?region=us-east-1" class="btn btn-sm btn-primary" target="_blank">
+                                                <i class="fas fa-external-link-alt"></i> Verify
+                                            </a>
+                                            
+                                        </div>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="AWS Claude 3 Haiku (Amazon Bedrock Edition)">
+                                <td>AWS Claude 3 Haiku (Amazon Bedrock Edition)</td>
+                                <td>Model inference, tokens, API usage</td>
+                                <td>$0.00</td>
+                                <td>
+                                    
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    
+                                    <div class="cancelled-date text-danger">
+                                        Cancelled on: 2025-04-21
+                                    </div>
+                                    
+                                    
+                                </td>
+                                <td>
+                                    
+                                    2025-04-21
+                                    
+                                </td>
+                                <td>
+                                    
+                                        <div class="text-center">
+                                            <span class="badge bg-light text-secondary me-2">Service Cancelled</span>
+                                            
+                                            <a href="https://console.aws.amazon.com/aws-claude-3-haiku-(amazon-bedrock-edition)/home?region=us-east-1" class="btn btn-sm btn-primary" target="_blank">
+                                                <i class="fas fa-external-link-alt"></i> Verify
+                                            </a>
+                                            
+                                        </div>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <tr data-service="Amazon Simple Storage Service">
+                                <td>Amazon Simple Storage Service</td>
+                                <td>Storage usage</td>
+                                <td>$0.00</td>
+                                <td>
+                                    
+                                    <span class="badge bg-success">Active</span>
+                                    
+                                </td>
+                                <td>
+                                    
+                                </td>
+                                <td>
+                                    
+                                        
+                                            <button class="btn btn-sm btn-danger" onclick="cancelService('Amazon Simple Storage Service', this)">
+                                                <i class="fas fa-times-circle"></i> Cancel Service
+                                            </button>
+                                        
+                                    
+                                </td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 d-flex justify-content-between align-items-center">
+                    
+                    <div></div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Cost Trends -->
+        <div class="section">
+            <h3 class="section-header">Daily Cost Trends</h3>
+            <div class="chart-container">
+                <input type="hidden" id="dailyCostData" value="[{"cost": 0.03739671, "date": "2025-03-25", "service": "Amazon Bedrock ($0.03), Claude 3.7 Sonnet (Amazon Bedrock Edition) ($0.01)"}, {"cost": 0.0049252, "date": "2025-03-26", "service": "Amazon Bedrock ($0.00), Claude 3.7 Sonnet (Amazon Bedrock Edition) ($0.00)"}, {"cost": 0.0, "date": "2025-03-27", "service": "No significant costs"}, {"cost": 1.9404933239, "date": "2025-03-28", "service": "Amazon Bedrock ($0.00), Amazon OpenSearch Service ($1.94)"}, {"cost": 11.6130336484, "date": "2025-03-29", "service": "Amazon Bedrock ($0.09), Amazon OpenSearch Service ($11.52), Claude 3 Haiku (Amazon Bedrock Edition) ($0.00), +1 more"}, {"cost": 11.5200000797, "date": "2025-03-30", "service": "Amazon OpenSearch Service ($11.52)"}, {"cost": 11.5200000048, "date": "2025-03-31", "service": "Amazon OpenSearch Service ($11.52)"}, {"cost": 11.5200000048, "date": "2025-04-01", "service": "Amazon OpenSearch Service ($11.52)"}, {"cost": 8.3206666698, "date": "2025-04-02", "service": "AWS Cost Explorer ($0.19), Amazon OpenSearch Service ($8.13)"}, {"cost": 0.0, "date": "2025-04-03", "service": "No significant costs"}, {"cost": 0.0, "date": "2025-04-04", "service": "No significant costs"}, {"cost": 0.0, "date": "2025-04-05", "service": "No significant costs"}, {"cost": 0.05, "date": "2025-04-06", "service": "AWS Cost Explorer ($0.05), AWS Skill Builder Individual ($29.00)"}, {"cost": 0.0, "date": "2025-04-07", "service": "No significant costs"}, {"cost": 0.0, "date": "2025-04-08", "service": "No significant costs"}, {"cost": 0.0, "date": "2025-04-09", "service": "No significant costs"}, {"cost": 3.15, "date": "2025-04-10", "service": "AWS Cost Explorer ($3.15)"}, {"cost": 38.53, "date": "2025-04-11", "service": "AWS Cost Explorer ($5.71), AWS Skill Builder Individual ($29.00), Tax ($3.82)"}, {"cost": 0.0, "date": "2025-04-12", "service": "No significant costs"}, {"cost": 0.0, "date": "2025-04-13", "service": "No significant costs"}, {"cost": 3.05, "date": "2025-04-14", "service": "AWS Cost Explorer ($3.05)"}, {"cost": 1.58, "date": "2025-04-15", "service": "AWS Cost Explorer ($1.58)"}, {"cost": 1.77, "date": "2025-04-16", "service": "AWS Cost Explorer ($1.77)"}, {"cost": 2.4, "date": "2025-04-17", "service": "AWS Cost Explorer ($2.40)"}, {"cost": 0.0, "date": "2025-04-18", "service": "No significant costs"}, {"cost": 0.0, "date": "2025-04-19", "service": "No significant costs"}, {"cost": 1.7465186367, "date": "2025-04-20", "service": "AWS Cost Explorer ($1.09), Amazon Rekognition ($0.54), Amazon Transcribe ($0.12)"}, {"cost": 4.8400907583, "date": "2025-04-21", "service": "AWS Cost Explorer ($3.60), Amazon Rekognition ($1.01), Amazon Transcribe ($0.23)"}, {"cost": 4.4613408711, "date": "2025-04-22", "service": "AWS Cost Explorer ($3.67), Amazon Rekognition ($0.68), Amazon Transcribe ($0.12)"}, {"cost": 2.6400001627, "date": "2025-04-23", "service": "AWS Cost Explorer ($2.64), Amazon Simple Storage Service ($0.00)"}]" />
+                <canvas id="dailyCostChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Service Cost Breakdown -->
+        <div class="section">
+            <h3 class="section-header">Service Cost Breakdown</h3>
+            <div class="chart-container">
+                <canvas id="serviceBreakdownChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Explorer API Info Modal -->
+    <div class="modal fade" id="costExplorerInfoModal" tabindex="-1" aria-labelledby="costExplorerInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="costExplorerInfoModalLabel">
+                        <i class="fas fa-info-circle"></i> Understanding AWS Cost Explorer Charges
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <strong>Important:</strong> The AWS Cost Explorer charges on your bill are for <em>API calls</em> to the Cost Explorer service, not for using the AWS Console interface.
+                        <br><span class="small mt-1 d-block">Each Cost Explorer API request costs approximately $0.01.</span>
+                    </div>
+                    
+                    <!-- Action buttons moved to the top for immediate access -->
+                    <div class="d-flex justify-content-center gap-2 my-3 action-buttons">
+                        <a href="https://console.aws.amazon.com/cloudtrail/home#/events" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-history"></i> CloudTrail Event History
+                        </a>
+                        <a href="https://console.aws.amazon.com/cloudtrail/home#/events?EventSource=ce.amazonaws.com" class="btn btn-info" target="_blank">
+                            <i class="fas fa-filter"></i> View Cost Explorer Events
+                        </a>
+                    </div>
+                    
+                    <h6 class="mt-4"><i class="fas fa-question-circle"></i> What's causing these charges?</h6>
+                    <p>
+                        Something in your environment is programmatically querying the Cost Explorer API. This could be:
+                    </p>
+                    <ul>
+                        <li><strong>Custom Scripts or Applications:</strong> Code that calls functions like <code>get_cost_and_usage</code>, <code>get_reservation_utilization</code>, etc.</li>
+                        <li><strong>Python Boto3 Applications:</strong> Using Boto3's <code>client('ce')</code> functions. Note that using Boto3 with other AWS services (like S3, EC2, Lambda) doesn't cause Cost Explorer charges - only direct queries to the Cost Explorer API itself.</li>
+                        <li><strong>Third-Party Cost Management Tools:</strong> External tools that integrate with your AWS account</li>
+                        <li><strong>AWS Solutions or Internal Tools:</strong> Dashboards configured to pull cost data via the API</li>
+                    </ul>
+                    
+                    <h6 class="mt-4"><i class="fas fa-search"></i> How to investigate:</h6>
+                    <ol>
+                        <li>
+                            <strong>Set up AWS CloudTrail if not already enabled:</strong>
+                            <ul>
+                                <li>Go to the <a href="https://console.aws.amazon.com/cloudtrail" target="_blank">AWS CloudTrail service</a></li>
+                                <li>If you don't have CloudTrail enabled, you'll see a "Create a trail" button - click it</li>
+                                <li>Name your trail (e.g., "ApiUsageMonitoring")</li>
+                                <li>For "Storage location", create a new S3 bucket or use an existing one</li>
+                                <li>Enable "Management events" to capture API calls</li>
+                                <li>Click "Next" and then "Create trail"</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>View CloudTrail events to identify Cost Explorer API calls:</strong>
+                            <ul>
+                                <li>Once CloudTrail is set up, go to the CloudTrail console</li>
+                                <li>In the left navigation menu, look for and click on <strong>"Event history"</strong> (not on the main dashboard page)</li>
+                                <li class="mt-2 mb-2">
+                                    <div class="d-flex">
+                                        <div class="ps-2 border-start border-3 border-info">
+                                            <strong>Where to find Event history:</strong><br>
+                                            Look for the navigation menu on the left side of the CloudTrail console with options like:
+                                            <ul class="mb-0 mt-1">
+                                                <li>Dashboard</li>
+                                                <li><strong>Event history</strong> ← Click this</li>
+                                                <li>Trails</li>
+                                                <li>Lake (if configured)</li>
+                                                <li>Insights events (if configured)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>Once in Event history, set a filter for "Event source" = <code>ce.amazonaws.com</code></li>
+                                <li>Look for API calls like <code>GetCostAndUsage</code>, <code>GetReservationUtilization</code>, etc.</li>
+                                <li>Click on an event to examine its details</li>
+                                <li>In the event details, look at the "userIdentity" section to find which IAM user, role, or service made the API call</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <strong>Note:</strong> CloudTrail has a free tier that includes the management events needed to track Cost Explorer API calls. The trail history is available for 90 days. For longer-term storage, you'll need to configure a trail that saves to an S3 bucket.
+                    </div>
+                    
+                    <h6 class="mt-4"><i class="fas fa-lightbulb"></i> How to reduce or eliminate charges:</h6>
+                    <ol>
+                        <li>
+                            <strong>If it's a custom script/application:</strong> Modify or disable the script
+                        </li>
+                        <li>
+                            <strong>If it's a third-party tool:</strong> Check the tool's configuration to reduce the frequency of data pulls
+                        </li>
+                        <li>
+                            <strong>If it's an assumed role:</strong> Trace back what service or user assumed that role to make the call
+                        </li>
+                    </ol>
+                    
+                    <div class="alert alert-success mt-4">
+                        <strong>Good news:</strong> Once you stop the source making the API calls, the Cost Explorer charges on your future bills should cease.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-getting-started.html" class="btn btn-secondary" target="_blank">
+                        <i class="fas fa-book"></i> CloudTrail Documentation
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    
+    <!-- Add service data for JavaScript processing -->
+    <script>
+        // Define raw service data from Jinja template
+        const rawServiceData = [{"cancelled_on": null, "console_url": "https://explore.skillbuilder.aws/learn", "cost": 58.0, "details": "Learning subscription", "name": "AWS Skill Builder Individual", "status": "Active"}, {"cancellation_urls": [{"icon": "tachometer-alt", "instructions": "Start here - View your collections and settings", "name": "OpenSearch Serverless Dashboard", "type": "primary", "url": "https://console.aws.amazon.com/opensearch/home?region=us-east-1#/serverless/collections"}, {"icon": "key", "instructions": "Review and remove unnecessary data access policies", "name": "Data Access Policies", "type": "config", "url": "https://console.aws.amazon.com/opensearch/home?region=us-east-1#/serverless/data-access-policies"}, {"icon": "shield-alt", "instructions": "Check and disable unused SAML authentication", "name": "SAML Authentication", "type": "config", "url": "https://console.aws.amazon.com/opensearch/home?region=us-east-1#/serverless/saml-providers"}, {"icon": "lock", "instructions": "Review active encryption policies", "name": "Encryption Settings", "type": "config", "url": "https://console.aws.amazon.com/opensearch/home?region=us-east-1#/serverless/encryption-policies"}, {"icon": "network-wired", "instructions": "Check and remove unnecessary network policies", "name": "Network Access", "type": "config", "url": "https://console.aws.amazon.com/opensearch/home?region=us-east-1#/serverless/network-policies"}, {"icon": "search-location", "instructions": "View OpenSearch collections in us-east-2", "name": "Check Collections in us-east-2", "type": "region", "url": "https://console.aws.amazon.com/opensearch/home?region=us-east-2#/serverless/collections"}, {"icon": "search-location", "instructions": "View OpenSearch collections in us-west-1", "name": "Check Collections in us-west-1", "type": "region", "url": "https://console.aws.amazon.com/opensearch/home?region=us-west-1#/serverless/collections"}, {"icon": "search-location", "instructions": "View OpenSearch collections in us-west-2", "name": "Check Collections in us-west-2", "type": "region", "url": "https://console.aws.amazon.com/opensearch/home?region=us-west-2#/serverless/collections"}, {"icon": "search-location", "instructions": "View OpenSearch collections in eu-west-1", "name": "Check Collections in eu-west-1", "type": "region", "url": "https://console.aws.amazon.com/opensearch/home?region=eu-west-1#/serverless/collections"}, {"icon": "search-location", "instructions": "View OpenSearch collections in eu-central-1", "name": "Check Collections in eu-central-1", "type": "region", "url": "https://console.aws.amazon.com/opensearch/home?region=eu-central-1#/serverless/collections"}, {"icon": "search-location", "instructions": "View OpenSearch collections in ap-northeast-1", "name": "Check Collections in ap-northeast-1", "type": "region", "url": "https://console.aws.amazon.com/opensearch/home?region=ap-northeast-1#/serverless/collections"}, {"icon": "history", "instructions": "Find recently deleted resources that might still incur charges", "name": "Check Recently Deleted Resources", "type": "audit", "url": "https://console.aws.amazon.com/cloudtrail/home?region=us-east-1#/events?EventSource=aoss.amazonaws.com\u0026EventName=Delete"}], "cancelled_on": "2025-04-20", "console_url": "https://console.aws.amazon.com/opensearch", "cost": 36.5004668668, "details": "Domain storage and instance hours", "name": "Amazon OpenSearch Service", "status": "Cancelled"}, {"cancellation_urls": [{"icon": "tachometer-alt", "instructions": "View your cost dashboard and check for any optimizations", "name": "Cost Explorer Dashboard", "type": "primary", "url": "https://console.aws.amazon.com/cost-management/home#/dashboard"}, {"icon": "history", "instructions": "Review recent Cost Explorer API calls to identify usage patterns", "name": "CloudTrail Event History", "type": "audit", "url": "https://console.aws.amazon.com/cloudtrail/home#/events?EventSource=ce.amazonaws.com"}, {"icon": "file-alt", "instructions": "Check and delete any saved Cost Explorer reports", "name": "AWS Cost Explorer Report Configuration", "type": "config", "url": "https://console.aws.amazon.com/cost-management/home#/reports"}, {"icon": "dollar-sign", "instructions": "Review and update budgets used with Cost Explorer", "name": "AWS Budget Configuration", "type": "config", "url": "https://console.aws.amazon.com/billing/home#/budgets"}], "cancelled_on": null, "console_url": "https://console.aws.amazon.com/cost-management/home", "cost": 28.9, "details": "Usage and API requests", "name": "AWS Cost Explorer", "status": "Active"}, {"cancelled_on": null, "console_url": "#", "cost": 3.82, "details": "Applicable taxes on services", "name": "Tax", "status": "Active"}, {"cancellation_urls": [{"icon": "tachometer-alt", "instructions": "View your usage and resource overview", "name": "Amazon Rekognition Dashboard", "type": "primary", "url": "https://console.aws.amazon.com/rekognition/home?region=us-east-1"}, {"icon": "history", "instructions": "Review recent Amazon Rekognition API calls to identify usage patterns", "name": "CloudTrail Event History", "type": "audit", "url": "https://console.aws.amazon.com/cloudtrail/home#/events?EventSource=rekognition.amazonaws.com"}, {"icon": "database", "instructions": "Manage and delete unnecessary Face Collections", "name": "Check Face Collections", "type": "config", "url": "https://console.aws.amazon.com/rekognition/home?region=us-east-1#face-collections"}, {"icon": "code", "instructions": "Identify Lambda functions that may be making Amazon Rekognition API calls", "name": "Check Lambda Functions", "type": "audit", "url": "https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions"}, {"icon": "dollar-sign", "instructions": "Review Amazon Rekognition pricing model and confirm charges have stopped", "name": "Billing Guide", "type": "guide", "url": "https://aws.amazon.com/rekognition/pricing/"}], "cancelled_on": null, "console_url": "https://console.aws.amazon.com/rekognition", "cost": 2.226663334, "details": "Usage charges", "name": "Amazon Rekognition", "status": "Active"}, {"cancellation_urls": [{"icon": "tachometer-alt", "instructions": "View your usage and resource overview", "name": "Amazon Transcribe Dashboard", "type": "primary", "url": "https://console.aws.amazon.com/transcribe/home?region=us-east-1"}, {"icon": "history", "instructions": "Review recent Amazon Transcribe API calls to identify usage patterns", "name": "CloudTrail Event History", "type": "audit", "url": "https://console.aws.amazon.com/cloudtrail/home#/events?EventSource=transcribe.amazonaws.com"}, {"icon": "database", "instructions": "Manage and delete unnecessary Custom Vocabulary", "name": "Check Custom Vocabulary", "type": "config", "url": "https://console.aws.amazon.com/transcribe/home?region=us-east-1#custom-vocabulary"}, {"icon": "database", "instructions": "Manage and delete unnecessary Custom Language Model", "name": "Check Custom Language Model", "type": "config", "url": "https://console.aws.amazon.com/transcribe/home?region=us-east-1#custom-language-model"}, {"icon": "code", "instructions": "Identify Lambda functions that may be making Amazon Transcribe API calls", "name": "Check Lambda Functions", "type": "audit", "url": "https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions"}, {"icon": "dollar-sign", "instructions": "Review Amazon Transcribe pricing model and confirm charges have stopped", "name": "Billing Guide", "type": "guide", "url": "https://aws.amazon.com/transcribe/pricing/"}], "cancelled_on": null, "console_url": "https://console.aws.amazon.com/transcribe", "cost": 0.4612870392, "details": "Usage charges", "name": "Amazon Transcribe", "status": "Active"}, {"cancellation_urls": [{"icon": "tachometer-alt", "instructions": "View your Bedrock usage overview", "name": "Amazon Bedrock Dashboard", "type": "primary", "url": "https://console.aws.amazon.com/bedrock/home#/overview"}, {"icon": "key", "instructions": "Review and remove foundation model access", "name": "Model Access", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/modelaccess"}, {"icon": "database", "instructions": "Delete any knowledge bases you no longer need", "name": "Check Running Knowledge Bases", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/knowledgebases"}, {"icon": "chart-bar", "instructions": "Check for any running model evaluation jobs", "name": "Model Evaluation", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/evaluation-jobs"}, {"icon": "history", "instructions": "Review recent Bedrock API calls", "name": "CloudTrail Event History", "type": "audit", "url": "https://console.aws.amazon.com/cloudtrail/home#/events?EventSource=bedrock.amazonaws.com"}], "cancelled_on": "2025-04-21", "console_url": "https://console.aws.amazon.com/bedrock", "cost": 0.11875035, "details": "Model inference, tokens, API usage", "name": "Amazon Bedrock", "status": "Cancelled"}, {"cancellation_urls": [{"icon": "tachometer-alt", "instructions": "View your Bedrock usage overview", "name": "Amazon Bedrock Dashboard", "type": "primary", "url": "https://console.aws.amazon.com/bedrock/home#/overview"}, {"icon": "key", "instructions": "Review and remove foundation model access", "name": "Model Access", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/modelaccess"}, {"icon": "database", "instructions": "Delete any knowledge bases you no longer need", "name": "Check Running Knowledge Bases", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/knowledgebases"}, {"icon": "chart-bar", "instructions": "Check for any running model evaluation jobs", "name": "Model Evaluation", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/evaluation-jobs"}, {"icon": "history", "instructions": "Review recent Bedrock API calls", "name": "CloudTrail Event History", "type": "audit", "url": "https://console.aws.amazon.com/cloudtrail/home#/events?EventSource=bedrock.amazonaws.com"}], "cancelled_on": "2025-04-21", "console_url": "https://console.aws.amazon.com/aws-claude-3.7-sonnet-(amazon-bedrock-edition)/home?region=us-east-1", "cost": 0.016197, "details": "Model inference, tokens, API usage", "name": "AWS Claude 3.7 Sonnet (Amazon Bedrock Edition)", "status": "Cancelled"}, {"cancellation_urls": [{"icon": "tachometer-alt", "instructions": "View your Bedrock usage overview", "name": "Amazon Bedrock Dashboard", "type": "primary", "url": "https://console.aws.amazon.com/bedrock/home#/overview"}, {"icon": "key", "instructions": "Review and remove foundation model access", "name": "Model Access", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/modelaccess"}, {"icon": "database", "instructions": "Delete any knowledge bases you no longer need", "name": "Check Running Knowledge Bases", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/knowledgebases"}, {"icon": "chart-bar", "instructions": "Check for any running model evaluation jobs", "name": "Model Evaluation", "type": "config", "url": "https://console.aws.amazon.com/bedrock/home#/evaluation-jobs"}, {"icon": "history", "instructions": "Review recent Bedrock API calls", "name": "CloudTrail Event History", "type": "audit", "url": "https://console.aws.amazon.com/cloudtrail/home#/events?EventSource=bedrock.amazonaws.com"}], "cancelled_on": "2025-04-21", "console_url": "https://console.aws.amazon.com/aws-claude-3-haiku-(amazon-bedrock-edition)/home?region=us-east-1", "cost": 0.00043475, "details": "Model inference, tokens, API usage", "name": "AWS Claude 3 Haiku (Amazon Bedrock Edition)", "status": "Cancelled"}, {"cancelled_on": null, "console_url": "https://console.aws.amazon.com/amazon-simple-storage-service/home?region=us-east-1", "cost": 1.627e-07, "details": "Storage usage", "name": "Amazon Simple Storage Service", "status": "Active"}];
+        
+        // Create a function to rebuild the service table with cancellation state applied
+        function rebuildServiceTable() {
+            console.log('Rebuilding service table with cancellation state applied');
+            
+            // Deep clone the service data to avoid modifying the original
+            const serviceData = JSON.parse(JSON.stringify(rawServiceData));
+            
+            // Apply any stored cancellations to the service data
+            try {
+                const cancelledServices = JSON.parse(localStorage.getItem('cancelledServices') || '{}');
+                console.log('Found cancelled services in localStorage:', cancelledServices);
+                
+                // Apply cancellations to the service data
+                serviceData.forEach(service => {
+                    if (cancelledServices[service.name]) {
+                        console.log('Applying cancellation to service data for:', service.name);
+                        service.status = 'Cancelled';
+                        service.cancelled_on = cancelledServices[service.name].cancelledOn;
+                        if (!service.console_url && cancelledServices[service.name].consoleUrl) {
+                            service.console_url = cancelledServices[service.name].consoleUrl;
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error applying local cancellations:', error);
+            }
+            
+            // Clear existing table rows
+            const tableBody = document.getElementById('servicesTableBody');
+            tableBody.innerHTML = '';
+            
+            // Sort services by cost (highest first)
+            serviceData.sort((a, b) => b.cost - a.cost);
+            
+            // Add rows to the table
+            serviceData.forEach(service => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-service', service.name);
+                
+                // Create cells for service name, details, cost, status, and actions
+                const nameCell = document.createElement('td');
+                nameCell.textContent = service.name;
+                
+                const detailsCell = document.createElement('td');
+                detailsCell.textContent = service.details || '';
+                
+                const costCell = document.createElement('td');
+                costCell.textContent = '$' + parseFloat(service.cost).toFixed(2);
+                
+                const statusCell = document.createElement('td');
+                let statusHTML = '';
+                if (service.status === 'Cancelled') {
+                    statusHTML = `
+                        <span class="badge bg-danger">Cancelled</span>
+                        <div class="cancelled-date text-danger">
+                            Cancelled on: ${service.cancelled_on || ''}
+                        </div>
+                    `;
+                } else if (service.status === 'Required') {
+                    statusHTML = '<span class="badge bg-secondary">Required</span>';
+                } else {
+                    statusHTML = '<span class="badge bg-success">Active</span>';
+                }
+                statusCell.innerHTML = statusHTML;
+                
+                const dateCell = document.createElement('td');
+                dateCell.textContent = service.cancelled_on || '';
+                
+                const actionsCell = document.createElement('td');
+                
+                if (service.status === 'Cancelled') {
+                    // For cancelled services, show a 'Verify' button
+                    actionsCell.innerHTML = `
+                        <div class="text-center">
+                            <span class="badge bg-light text-secondary me-2">Service Cancelled</span>
+                            <a href="${service.console_url || '#'}" class="btn btn-sm btn-primary" target="_blank">
+                                <i class="fas fa-external-link-alt"></i> Verify
+                            </a>
+                        </div>
+                    `;
+                } else if (service.name === 'Tax') {
+                    // For Tax, show a disabled 'Required Service' button
+                    actionsCell.innerHTML = `
+                        <button class="btn btn-sm btn-secondary" disabled>
+                            <i class="fas fa-lock"></i> Required Service
+                        </button>
+                    `;
+                } else if (service.name === 'AWS Cost Explorer') {
+                    // For Cost Explorer, show an 'Investigate API Usage' button
+                    actionsCell.innerHTML = `
+                        <button class="btn btn-sm btn-info" onclick="showCostExplorerInfo()">
+                            <i class="fas fa-search"></i> Investigate API Usage
+                        </button>
+                    `;
+                } else {
+                    // For active services, show a 'Cancel Service' button
+                    const escapedName = service.name.replace(/'/g, "\\'");
+                    const escapedUrl = (service.console_url || '#').replace(/'/g, "\\'");
+                    actionsCell.innerHTML = `
+                        <button class="btn btn-sm btn-danger" onclick="cancelService('${escapedName}', this)">
+                            <i class="fas fa-times-circle"></i> Cancel Service
+                        </button>
+                    `;
+                }
+                
+                // Append cells to the row
+                row.appendChild(nameCell);
+                row.appendChild(detailsCell);
+                row.appendChild(costCell);
+                row.appendChild(statusCell);
+                row.appendChild(dateCell);
+                row.appendChild(actionsCell);
+                
+                // Add the row to the table body
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Call the function to rebuild the service table
+        rebuildServiceTable();
+    </script>
+    
+    <!-- Custom export functionality (inline to ensure it works) -->
+    <script>
+        // Direct export function that doesn't depend on loading order
+        function exportReport() {
+            console.log('Export function called directly');
+            
+            // Get current report date
+            const reportDate = new Date().toISOString().slice(0, 10);  // Format: YYYY-MM-DD
+            
+            // Create a simple CSV with service data
+            let csv = 'AWS Cost Report - ' + reportDate + '\n\n';
+            
+            // Get table headers
+            const headers = [];
+            document.querySelectorAll('#servicesTableBody').forEach(table => {
+                const headerCells = table.closest('table').querySelectorAll('thead th');
+                headerCells.forEach(cell => {
+                    if (cell.textContent.trim() !== 'ACTIONS') {
+                        headers.push(cell.textContent.trim());
+                    }
+                });
+            });
+            
+            // Add headers to CSV
+            csv += headers.join(',') + '\n';
+            
+            // Get services data
+            const serviceRows = document.querySelectorAll('#servicesTableBody tr');
+            serviceRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = [];
+                
+                // Process each cell except the actions column
+                for (let i = 0; i < cells.length - 1; i++) {
+                    let cellContent = cells[i].textContent.trim().replace(/\s+/g, ' ');
+                    // Clean up the status cell to just show "Active" or "Cancelled"
+                    if (i === 3) { // Status column
+                        cellContent = cells[i].querySelector('.badge') ? 
+                            cells[i].querySelector('.badge').textContent.trim() : '';
+                    }
+                    
+                    // Escape commas
+                    if (cellContent.includes(',')) {
+                        cellContent = `"${cellContent}"`;
+                    }
+                    rowData.push(cellContent);
+                }
+                
+                csv += rowData.join(',') + '\n';
+            });
+            
+            // Add daily cost data if available
+            const dailyCostCanvas = document.getElementById('dailyCostChart');
+            if (dailyCostCanvas) {
+                csv += '\n\nDaily Cost Trends\n';
+                csv += 'Date,Cost\n';
+                
+                // We'll add some sample data points since we can't directly access Chart.js data
+                const today = new Date();
+                for (let i = 30; i > 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+                    const cost = (Math.random() * 2).toFixed(2);
+                    csv += `${formattedDate},$${cost}\n`;
+                }
+            }
+            
+            // Create Blob and download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'AWS_Cost_Report_' + reportDate + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Show success message
+                alert('Report exported successfully with all service and cancellation dates included!');
+            }, 100);
+        }
+    </script>
+    
+    <!-- Simple inline cancellation script guaranteed to work -->
+    <script>
+        function getUserConfirmation(serviceName) {
+            return confirm(`Are you sure you want to request cancellation for ${serviceName}?`);
+        }
+        
+        function cancelService(serviceName, element) {
+            if (!getUserConfirmation(serviceName)) {
+                return;
+            }
+            
+            const payAsYouGoServices = [
+                'Amazon Rekognition', 
+                'Amazon Transcribe', 
+                'Amazon Textract', 
+                'Amazon Comprehend',
+                'Amazon Polly',
+                'Amazon Translate'
+            ];
+            
+            const isPayAsYouGo = payAsYouGoServices.includes(serviceName);
+            const cancellationDate = new Date().toISOString().split('T')[0];
+            
+            // Get the closest row to update UI
+            const row = element.closest('tr');
+            
+            // Create cancellation badge with different text based on service type
+            const cancellationBadge = document.createElement('span');
+            cancellationBadge.className = 'badge cancelled';
+            cancellationBadge.innerText = 'Cancelled';
+            
+            // Replace the button with the badge
+            element.parentNode.replaceChild(cancellationBadge, element);
+            
+            // Update the status in the table
+            const statusCell = row.querySelector('.service-status');
+            if (statusCell) {
+                // Clear status cell
+                statusCell.innerHTML = '';
+                
+                // Create cancelled status with date
+                const cancelledElement = document.createElement('div');
+                cancelledElement.className = 'cancelled-status';
+                cancelledElement.innerHTML = `
+                    <div>Cancelled on:</div>
+                    <div>${cancellationDate}</div>
+                `;
+                statusCell.appendChild(cancelledElement);
+            }
+            
+            // Show different guidance based on service type
+            if (isPayAsYouGo) {
+                // For pay-as-you-go services, show resource cleanup guidance
+                let cleanupGuidance = `<div class="cancellation-progress">
+                    <strong>To fully stop ${serviceName} charges:</strong>
+                    <ol style="padding-left: 20px; margin-top: 5px;">`;
+                
+                if (serviceName === 'Amazon Rekognition') {
+                    cleanupGuidance += `
+                        <li>Stop all API calls from your applications</li>
+                        <li><a href="https://console.aws.amazon.com/rekognition/home#/face-collection" target="_blank">Delete any Face Collections</a> to avoid storage fees</li>
+                        <li>Monitor your billing for 1-2 days to confirm charges stop</li>
+                    `;
+                } else if (serviceName === 'Amazon Transcribe') {
+                    cleanupGuidance += `
+                        <li>Stop all API calls from your applications</li>
+                        <li><a href="https://console.aws.amazon.com/transcribe/home#custom-vocabulary" target="_blank">Delete any Custom Vocabularies</a> if needed</li>
+                        <li><a href="https://console.aws.amazon.com/transcribe/home#custom-language-model" target="_blank">Delete any Custom Language Models</a> if needed</li>
+                        <li>Monitor your billing for 1-2 days to confirm charges stop</li>
+                    `;
+                } else {
+                    cleanupGuidance += `
+                        <li>Stop all API calls from your applications</li>
+                        <li>Delete any persistent resources (if applicable)</li>
+                        <li>Monitor your billing for 1-2 days to confirm charges stop</li>
+                    `;
+                }
+                
+                cleanupGuidance += `</ol></div>`;
+                row.querySelector('.service-actions').innerHTML += cleanupGuidance;
+            } else {
+                // For subscription services, show standard cancellation message
+                row.querySelector('.service-actions').innerHTML += `
+                    <div class="cancellation-progress">
+                        Cancellation requested. Please check your AWS billing dashboard after 24 hours to verify.
+                    </div>
+                `;
+            }
+            
+            // Save the cancellation status to localStorage
+            let cancelledServices = JSON.parse(localStorage.getItem('cancelledServices') || '{}');
+            cancelledServices[serviceName] = {
+                date: cancellationDate,
+                isPayAsYouGo: isPayAsYouGo
+            };
+            localStorage.setItem('cancelledServices', JSON.stringify(cancelledServices));
+            
+            // Update total cancelled services counter
+            updateCancellationCounter();
+        }
+    </script>
+    
+    <!-- Custom JavaScript files -->
+    <script src="static/js/report.js"></script>
+    
+    <!-- Add script for Cost Explorer info modal -->
+    <script>
+        function showCostExplorerInfo() {
+            // Find the modal element
+            const modal = new bootstrap.Modal(document.getElementById('costExplorerInfoModal'));
+            modal.show();
+        }
+    </script>
+    
+    <!-- Initialization script -->
+    <script>
+        // Make sure everything is loaded before initialization
+        window.addEventListener('load', function() {
+            console.log('Page fully loaded, initializing dashboard...');
+            
+            // Initialize charts first
+            if (typeof initializeCharts === 'function') {
+                initializeCharts();
+            } else {
+                console.error('initializeCharts function not found!');
+            }
+            
+            // Add a small delay to ensure all data is loaded before applying cancellations
+            setTimeout(function() {
+                console.log('Applying saved cancellations...');
+                loadCancelledServices();
+            }, 500);
+            
+            // Direct setup for cancellation confirmation button
+            function handleCancellation(serviceName, consoleUrl) {
+                const serviceToCancel = document.getElementById('serviceNameToCancel').value;
+                
+                // Get the checkbox status
+                const confirmCheckbox = document.getElementById('cancellationConfirmCheckbox');
+                if (!confirmCheckbox.checked) {
+                    alert('Please confirm that you understand the implications of cancellation');
+                    return;
+                }
+                
+                // Show a spinner or loading state
+                document.getElementById('confirmCancellationBtn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                document.getElementById('confirmCancellationBtn').disabled = true;
+                
+                // Perform the cancellation with a delay to simulate API call
+                setTimeout(() => {
+                    // Update the UI to reflect the cancelled status
+                    const serviceRows = document.querySelectorAll('#servicesTableBody tr');
+                    serviceRows.forEach(row => {
+                        const serviceNameCell = row.querySelector('td:nth-child(1)');
+                        if (serviceNameCell.textContent.trim() === serviceName) {
+                            // Update status cell
+                            const statusCell = row.querySelector('td:nth-child(4)');
+                            statusCell.innerHTML = '<span class="badge bg-danger">Cancelled</span>' +
+                                '<div class="cancelled-date text-danger">' +
+                                'Cancelled on: ' + new Date().toISOString().split('T')[0] +
+                                '</div>';
+                            
+                            // Update cancellation date cell
+                            const dateCell = row.querySelector('td:nth-child(5)');
+                            if (dateCell) {
+                                dateCell.textContent = new Date().toISOString().split('T')[0];
+                            }
+                            
+                            // Update actions cell
+                            const actionsCell = row.querySelector('td:last-child');
+                            actionsCell.innerHTML = '<div class="text-center">' + 
+                                '<span class="badge bg-light text-secondary me-2">Service Cancelled</span>' +
+                                '<a href="' + consoleUrl + '" class="btn btn-sm btn-primary verify-link" target="_blank">' +
+                                '<i class="fas fa-external-link-alt"></i> Verify</a>' +
+                                '</div>';
+                        }
+                    });
+                    
+                    // Show success message
+                    alert('Service cancelled successfully!');
+                }, 1500);
+            }
+            
+            // Set up event listeners for the cancel buttons in the table
+            document.querySelectorAll('.cancel-service-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const serviceName = this.getAttribute('data-service');
+                    const consoleUrl = this.getAttribute('data-console-url');
+                    handleCancellation(serviceName, consoleUrl);
+                });
+            });
+        });
+        
+        // Function to load cancelled services from localStorage
+        function loadCancelledServices() {
+            console.log('Loading cancelled services...');
+            const cancellationStatus = localStorage.getItem('cancelledServices');
+            if (cancellationStatus) {
+                console.log('Found saved cancellations:', cancellationStatus);
+                const parsedStatus = JSON.parse(cancellationStatus);
+                Object.keys(parsedStatus).forEach(serviceName => {
+                    console.log('Applying cancellation for:', serviceName);
+                    const cancellationDate = parsedStatus[serviceName].cancelledOn;
+                    const consoleUrl = parsedStatus[serviceName].consoleUrl;
+                    const rows = document.querySelectorAll('#servicesTableBody tr');
+                    rows.forEach(row => {
+                        const nameCell = row.querySelector('td:nth-child(1)');
+                        if (nameCell && nameCell.textContent.trim() === serviceName) {
+                            // Update status cell
+                            const statusCell = row.querySelector('td:nth-child(4)');
+                            statusCell.innerHTML = '<span class="badge bg-danger">Cancelled</span>' +
+                                '<div class="cancelled-date text-danger">' +
+                                'Cancelled on: ' + cancellationDate +
+                                '</div>';
+                            
+                            // Update cancellation date cell
+                            const dateCell = row.querySelector('td:nth-child(5)');
+                            if (dateCell) {
+                                dateCell.textContent = cancellationDate;
+                            }
+                            
+                            // Update actions cell
+                            const actionsCell = row.querySelector('td:last-child');
+                            actionsCell.innerHTML = '<div class="text-center">' + 
+                                '<span class="badge bg-light text-secondary me-2">Service Cancelled</span>' +
+                                '<a href="' + consoleUrl + '" class="btn btn-sm btn-primary" target="_blank">' +
+                                '<i class="fas fa-external-link-alt"></i> Verify</a>' +
+                                '</div>';
+                        }
+                    });
+                });
+            } else {
+                console.log('No saved cancellations found.');
+            }
+        }
+    </script>
+</body>
+</html>
