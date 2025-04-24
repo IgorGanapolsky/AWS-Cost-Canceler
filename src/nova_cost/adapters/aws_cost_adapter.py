@@ -92,6 +92,25 @@ class AWSCostAdapter(CostDataPort):
         
         # Initialize AWS Billing Detective
         self.aws_billing_detective = AWSBillingDetective()
+        
+        # Service categorization
+        self.pay_as_you_go_services = [
+            'Amazon Rekognition', 
+            'Amazon Transcribe',
+            'Amazon Polly',
+            'Amazon Textract',
+            'Amazon Comprehend',
+            'Amazon Translate',
+            'Amazon Lex',
+            'AWS CodeWhisperer',
+            'Amazon Kendra'
+        ]
+        
+        self.required_services = [
+            'Tax', 
+            'AWS Tax', 
+            'Tax on AWS services'
+        ]
     
     def get_date_range(self, days_back: int = 30) -> Tuple[str, str]:
         """
@@ -261,10 +280,10 @@ class AWSCostAdapter(CostDataPort):
                 if "Claude" in service_name or "Bedrock" in service_name or service_name == "Amazon OpenSearch Service" or service_name == "Amazon Simple Storage Service":
                     status = "Cancelled"
                     cancelled_on = "2025-04-21"  # Use today's date
-                elif service_name == "Amazon Rekognition" or service_name == "Amazon Transcribe":
+                elif service_name in self.pay_as_you_go_services:
                     status = "Pay-As-You-Go"
                     cancelled_on = None
-                elif service_name == "Tax":
+                elif service_name in self.required_services:
                     status = "Required"  # Mark tax as required/non-cancellable
                     cancelled_on = None
                 else:

@@ -30,7 +30,7 @@ class HTMLReportAdapter(ReportGeneratorPort):
         self.report_data = {}
         
         # Set up Jinja2 environment
-        package_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        package_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         self.template_dir = os.path.join(package_dir, 'templates')
         self.env = Environment(loader=FileSystemLoader(self.template_dir))
         

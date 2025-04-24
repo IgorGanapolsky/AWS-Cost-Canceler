@@ -108,3 +108,4 @@ yarn-error.log
 *.db
 *.sqlite
 dashboard_data/
+data/reports/
