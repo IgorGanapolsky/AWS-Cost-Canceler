@@ -267,50 +267,46 @@
                                 <td>
                                     {% if service.status == 'Cancelled' %}
                                     <span class="badge bg-danger">Cancelled</span>
-                                    {% if service.cancelled_on %}
-                                    <div class="cancelled-date text-danger">
-                                        Cancelled on: {{ service.cancelled_on }}
-                                    </div>
-                                    {% endif %}
                                     {% elif service.status == 'Required' %}
                                     <span class="badge bg-secondary">Required</span>
+                                    {% elif service.status == 'Pay-As-You-Go' %}
+                                    <span class="badge bg-info">Pay-As-You-Go</span>
                                     {% else %}
                                     <span class="badge bg-success">Active</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if service.status == 'Cancelled' and service.cancelled_on %}
-                                    {{ service.cancelled_on }}
+                                    {% if service.status == 'Cancelled' %}
+                                    Cancelled on:<br>
+                                    <span class="text-danger">{{ service.cancelled_on }}</span>
+                                    {% elif service.status == 'Pay-As-You-Go' %}
+                                    <span class="text-info">Usage-based</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    {% if service.status == 'Active' %}
-                                        {% if service.name == 'Tax' %}
-                                            <button class="btn btn-sm btn-secondary" disabled>
-                                                <i class="fas fa-lock"></i> Required Service
-                                            </button>
-                                        {% elif service.name == 'AWS Cost Explorer' %}
-                                            <button class="btn btn-sm btn-info" onclick="showCostExplorerInfo()">
-                                                <i class="fas fa-search"></i> Investigate API Usage
-                                            </button>
-                                        {% elif service.name == 'Amazon Rekognition' || service.name == 'Amazon Transcribe' %}
-                                            <button class="btn btn-sm btn-warning" onclick="showPayAsYouGoInfo('{{ service.name }}')">
-                                                <i class="fas fa-info-circle"></i> Manage Usage
-                                            </button>
-                                        {% else %}
-                                            <button class="btn btn-sm btn-danger" onclick="cancelService('{{ service.name }}', this)">
-                                                <i class="fas fa-times-circle"></i> Cancel Service
-                                            </button>
-                                        {% endif %}
-                                    {% elif service.status == 'Cancelled' %}
-                                        <div class="text-center">
-                                            <span class="badge bg-light text-secondary me-2">Service Cancelled</span>
-                                            {% if service.console_url %}
-                                            <a href="{{ service.console_url }}" class="btn btn-sm btn-primary" target="_blank">
-                                                <i class="fas fa-external-link-alt"></i> Verify
-                                            </a>
-                                            {% endif %}
-                                        </div>
+                                <td class="text-end">
+                                    {% if service.status == 'Cancelled' %}
+                                    <div class="text-center">
+                                        <span class="badge bg-light text-secondary me-2">Service Cancelled</span>
+                                        <a href="{{ service.console_url }}" class="btn btn-sm btn-primary" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i> Verify
+                                        </a>
+                                    </div>
+                                    {% elif service.status == 'Required' %}
+                                    <button class="btn btn-sm btn-secondary" disabled>
+                                        <i class="fas fa-lock"></i> Required Service
+                                    </button>
+                                    {% elif service.name == 'AWS Cost Explorer' %}
+                                    <button class="btn btn-sm btn-info" onclick="showCostExplorerInfo()">
+                                        <i class="fas fa-search"></i> Investigate API Usage
+                                    </button>
+                                    {% elif service.status == 'Pay-As-You-Go' %}
+                                    <button class="btn btn-sm btn-warning" onclick="showPayAsYouGoInfo('{{ service.name }}')">
+                                        <i class="fas fa-info-circle"></i> Manage Usage
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-danger" onclick="cancelService('{{ service.name }}', this)">
+                                        <i class="fas fa-times-circle"></i> Cancel Service
+                                    </button>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -535,7 +531,7 @@
                     `;
                 } else if (service.status === 'Required') {
                     statusHTML = '<span class="badge bg-secondary">Required</span>';
-                } else if (service.name === 'Amazon Rekognition' || service.name === 'Amazon Transcribe') {
+                } else if (service.status === 'Pay-As-You-Go') {
                     statusHTML = '<span class="badge bg-info">Pay-As-You-Go</span>';
                 } else {
                     statusHTML = '<span class="badge bg-success">Active</span>';
@@ -543,7 +539,13 @@
                 statusCell.innerHTML = statusHTML;
                 
                 const dateCell = document.createElement('td');
-                dateCell.textContent = service.cancelled_on || '';
+                if (service.status === 'Cancelled') {
+                    dateCell.innerHTML = `Cancelled on:<br><span class="text-danger">${service.cancelled_on || ''}</span>`;
+                } else if (service.status === 'Pay-As-You-Go') {
+                    dateCell.innerHTML = '<span class="text-info">Usage-based</span>';
+                } else {
+                    dateCell.textContent = service.cancelled_on || '';
+                }
                 
                 const actionsCell = document.createElement('td');
                 
@@ -571,7 +573,7 @@
                             <i class="fas fa-search"></i> Investigate API Usage
                         </button>
                     `;
-                } else if (service.name === 'Amazon Rekognition' || service.name === 'Amazon Transcribe') {
+                } else if (service.status === 'Pay-As-You-Go') {
                     // Special handling for pay-as-you-go services
                     const escapedName = service.name.replace(/'/g, "\\'");
                     actionsCell.innerHTML = `
@@ -579,6 +581,12 @@
                             <i class="fas fa-info-circle"></i> Manage Usage
                         </button>
                     `;
+                    
+                    // Also update status cell for pay-as-you-go services
+                    statusCell.innerHTML = '<span class="badge bg-info">Pay-As-You-Go</span>';
+                    
+                    // Clear cancelled date if it was set
+                    dateCell.textContent = '';
                 } else {
                     // For active services, show a 'Cancel Service' button
                     const escapedName = service.name.replace(/'/g, "\\'");
@@ -953,7 +961,7 @@
                             const actionsCell = row.querySelector('td:last-child');
                             actionsCell.innerHTML = '<div class="text-center">' + 
                                 '<span class="badge bg-light text-secondary me-2">Service Cancelled</span>' +
-                                '<a href="' + consoleUrl + '" class="btn btn-sm btn-primary verify-link" target="_blank">' +
+                                '<a href="' + consoleUrl + '" class="btn btn-sm btn-primary" target="_blank">' +
                                 '<i class="fas fa-external-link-alt"></i> Verify</a>' +
                                 '</div>';
                         }

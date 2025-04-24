@@ -368,7 +368,7 @@
                                 <td>$2.23</td>
                                 <td>
                                     
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="badge bg-info">Pay-As-You-Go</span>
                                     
                                 </td>
                                 <td>
@@ -377,8 +377,8 @@
                                 <td>
                                     
                                         
-                                            <button class="btn btn-sm btn-danger" onclick="cancelService('Amazon Rekognition', this)">
-                                                <i class="fas fa-times-circle"></i> Cancel Service
+                                            <button class="btn btn-sm btn-warning" onclick="showPayAsYouGoInfo('Amazon Rekognition')">
+                                                <i class="fas fa-info-circle"></i> Manage Usage
                                             </button>
                                         
                                     
@@ -391,7 +391,7 @@
                                 <td>$0.46</td>
                                 <td>
                                     
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="badge bg-info">Pay-As-You-Go</span>
                                     
                                 </td>
                                 <td>
@@ -400,8 +400,8 @@
                                 <td>
                                     
                                         
-                                            <button class="btn btn-sm btn-danger" onclick="cancelService('Amazon Transcribe', this)">
-                                                <i class="fas fa-times-circle"></i> Cancel Service
+                                            <button class="btn btn-sm btn-warning" onclick="showPayAsYouGoInfo('Amazon Transcribe')">
+                                                <i class="fas fa-info-circle"></i> Manage Usage
                                             </button>
                                         
                                     
@@ -740,6 +740,8 @@
                     `;
                 } else if (service.status === 'Required') {
                     statusHTML = '<span class="badge bg-secondary">Required</span>';
+                } else if (['Amazon Rekognition', 'Amazon Transcribe'].includes(service.name)) {
+                    statusHTML = '<span class="badge bg-info">Pay-As-You-Go</span>';
                 } else {
                     statusHTML = '<span class="badge bg-success">Active</span>';
                 }
@@ -774,6 +776,20 @@
                             <i class="fas fa-search"></i> Investigate API Usage
                         </button>
                     `;
+                } else if (['Amazon Rekognition', 'Amazon Transcribe'].includes(service.name)) {
+                    // Special handling for pay-as-you-go services
+                    const escapedName = service.name.replace(/'/g, "\\'");
+                    actionsCell.innerHTML = `
+                        <button class="btn btn-sm btn-warning" onclick="showPayAsYouGoInfo('${escapedName}')">
+                            <i class="fas fa-info-circle"></i> Manage Usage
+                        </button>
+                    `;
+                    
+                    // Also update status cell for pay-as-you-go services
+                    statusCell.innerHTML = '<span class="badge bg-info">Pay-As-You-Go</span>';
+                    
+                    // Clear cancelled date if it was set
+                    dateCell.textContent = '';
                 } else {
                     // For active services, show a 'Cancel Service' button
                     const escapedName = service.name.replace(/'/g, "\\'");
@@ -800,8 +816,97 @@
         
         // Call the function to rebuild the service table
         rebuildServiceTable();
+
+        // Function to display guidance for pay-as-you-go services
+        function showPayAsYouGoInfo(serviceName) {
+            // Create modal content based on service
+            let modalTitle, resourceTypes, cleanupSteps;
+            
+            if (serviceName === 'Amazon Rekognition') {
+                modalTitle = 'Managing Amazon Rekognition Usage';
+                resourceTypes = `
+                    <li><strong>Collections</strong> - For storing face metadata</li>
+                    <li><strong>Stream Processors</strong> - For real-time video analysis</li>
+                    <li><strong>Custom Labels Models</strong> - For custom image recognition</li>
+                `;
+                cleanupSteps = `
+                    <li>To stop all charges, you must delete any persistent resources:
+                        <ul>
+                            <li>Delete Collections: <code>aws rekognition delete-collection --collection-id COLLECTION_ID</code></li>
+                            <li>Stop Stream Processors: <code>aws rekognition stop-stream-processor --name PROCESSOR_NAME</code></li>
+                            <li>Stop Custom Labels Models: <code>aws rekognition stop-project-version --project-version-arn MODEL_ARN</code></li>
+                        </ul>
+                    </li>
+                    <li>Review your application code to ensure it's not making unnecessary API calls</li>
+                    <li>Consider implementing usage limits or alarms to prevent unexpected charges</li>
+                `;
+            } else if (serviceName === 'Amazon Transcribe') {
+                modalTitle = 'Managing Amazon Transcribe Usage';
+                resourceTypes = `
+                    <li><strong>Custom Vocabularies</strong> - For custom terminology</li>
+                    <li><strong>Custom Language Models</strong> - For domain-specific transcription</li>
+                    <li><strong>Vocabulary Filters</strong> - For filtering specific words</li>
+                `;
+                cleanupSteps = `
+                    <li>To stop all charges, you must delete any persistent resources:
+                        <ul>
+                            <li>Delete Custom Vocabularies: <code>aws transcribe delete-vocabulary --vocabulary-name VOCABULARY_NAME</code></li>
+                            <li>Delete Custom Language Models: <code>aws transcribe delete-language-model --model-name MODEL_NAME</code></li>
+                            <li>Delete Vocabulary Filters: <code>aws transcribe delete-vocabulary-filter --vocabulary-filter-name FILTER_NAME</code></li>
+                        </ul>
+                    </li>
+                    <li>Transcribed audio/video files in S3 will continue to incur S3 storage costs</li>
+                    <li>Review your application code to ensure it's not submitting new transcription jobs</li>
+                `;
+            }
+            
+            // Create modal HTML
+            const modalHtml = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${modalTitle}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>${serviceName} is a pay-as-you-go service.</strong> 
+                            There is no formal "cancellation" process - you are only charged when you make API calls or have persistent resources.
+                        </div>
+                        
+                        <h6>Persistent Resource Types:</h6>
+                        <ul>${resourceTypes}</ul>
+                        
+                        <h6>How to Stop Charges:</h6>
+                        <ol>${cleanupSteps}</ol>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Important:</strong> 
+                            Simply stopping API calls will prevent new charges, but any persistent resources will continue to incur costs until explicitly deleted.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                            <i class="fas fa-check"></i> Got it
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+            
+            // Get the modal element
+            const modal = document.getElementById('serviceInfoModal');
+            modal.innerHTML = modalHtml;
+            
+            // Show the modal
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
     </script>
     
+    <!-- Modal for service info (used for pay-as-you-go services) -->
+    <div class="modal fade" id="serviceInfoModal" tabindex="-1" aria-hidden="true"></div>
+
     <!-- Custom export functionality (inline to ensure it works) -->
     <script>
         // Direct export function that doesn't depend on loading order
@@ -947,22 +1052,21 @@
                 
                 if (serviceName === 'Amazon Rekognition') {
                     cleanupGuidance += `
-                        <li>Stop all API calls from your applications</li>
-                        <li><a href="https://console.aws.amazon.com/rekognition/home#/face-collection" target="_blank">Delete any Face Collections</a> to avoid storage fees</li>
-                        <li>Monitor your billing for 1-2 days to confirm charges stop</li>
+                        <li>Delete any Collections: <code>aws rekognition delete-collection --collection-id COLLECTION_ID</code></li>
+                        <li>Stop any Stream Processors: <code>aws rekognition stop-stream-processor --name PROCESSOR_NAME</code></li>
+                        <li>Stop any Custom Labels Models: <code>aws rekognition stop-project-version --project-version-arn MODEL_ARN</code></li>
                     `;
                 } else if (serviceName === 'Amazon Transcribe') {
                     cleanupGuidance += `
-                        <li>Stop all API calls from your applications</li>
-                        <li><a href="https://console.aws.amazon.com/transcribe/home#custom-vocabulary" target="_blank">Delete any Custom Vocabularies</a> if needed</li>
-                        <li><a href="https://console.aws.amazon.com/transcribe/home#custom-language-model" target="_blank">Delete any Custom Language Models</a> if needed</li>
-                        <li>Monitor your billing for 1-2 days to confirm charges stop</li>
+                        <li>Delete any Custom Vocabularies: <code>aws transcribe delete-vocabulary --vocabulary-name VOCABULARY_NAME</code></li>
+                        <li>Delete any Custom Language Models: <code>aws transcribe delete-language-model --model-name MODEL_NAME</code></li>
+                        <li>Delete any Vocabulary Filters: <code>aws transcribe delete-vocabulary-filter --vocabulary-filter-name FILTER_NAME</code></li>
                     `;
                 } else {
                     cleanupGuidance += `
-                        <li>Stop all API calls from your applications</li>
                         <li>Delete any persistent resources (if applicable)</li>
-                        <li>Monitor your billing for 1-2 days to confirm charges stop</li>
+                        <li>Review your application code to ensure it's not making unnecessary API calls</li>
+                        <li>Consider implementing usage limits or alarms to prevent unexpected charges</li>
                     `;
                 }
                 
@@ -1060,7 +1164,7 @@
                             const actionsCell = row.querySelector('td:last-child');
                             actionsCell.innerHTML = '<div class="text-center">' + 
                                 '<span class="badge bg-light text-secondary me-2">Service Cancelled</span>' +
-                                '<a href="' + consoleUrl + '" class="btn btn-sm btn-primary verify-link" target="_blank">' +
+                                '<a href="' + consoleUrl + '" class="btn btn-sm btn-primary" target="_blank">' +
                                 '<i class="fas fa-external-link-alt"></i> Verify</a>' +
                                 '</div>';
                         }

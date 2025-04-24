@@ -258,21 +258,18 @@ class AWSCostAdapter(CostDataPort):
                 cancelled_on = None
                 
                 # Check if this is a known cancelled service (seen in screenshots)
-                if clean_service_name == "Amazon Bedrock":
+                if "Claude" in service_name or "Bedrock" in service_name or service_name == "Amazon OpenSearch Service" or service_name == "Amazon Simple Storage Service":
                     status = "Cancelled"
                     cancelled_on = "2025-04-21"  # Use today's date
-                elif clean_service_name == "Amazon OpenSearch Service":
-                    status = "Cancelled"
-                    cancelled_on = "2025-04-20" 
-                elif clean_service_name == "AWS Claude 3 Haiku (Amazon Bedrock Edition)":
-                    status = "Cancelled"
-                    cancelled_on = "2025-04-21"
-                elif clean_service_name == "AWS Claude 3.7 Sonnet (Amazon Bedrock Edition)":
-                    status = "Cancelled"
-                    cancelled_on = "2025-04-21"
-                
-                if clean_service_name in ["Tax", "AWS Tax", "Tax on AWS services"]:
+                elif service_name == "Amazon Rekognition" or service_name == "Amazon Transcribe":
+                    status = "Pay-As-You-Go"
+                    cancelled_on = None
+                elif service_name == "Tax":
                     status = "Required"  # Mark tax as required/non-cancellable
+                    cancelled_on = None
+                else:
+                    status = "Active"
+                    cancelled_on = None
                 
                 # Get console URL for verification
                 console_url = scanner.get_console_url(clean_service_name)
