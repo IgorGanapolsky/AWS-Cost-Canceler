@@ -36,7 +36,7 @@ Experience our interactive AWS Cost Dashboard:
 
 | Daily Cost Trends Visualization | Service Cost Breakdown |
 |:------------------------------:|:----------------------:|
-| ![Daily Cost Trends](docs/images/screenshot-2025-04-24-2-42-32-pm.png) | ![Service Breakdown](docs/images/screenshot-2025-04-24-2-42-51-pm.png) |
+| ![Daily Cost Trends](docs/images/screenshot-2025-04-24-2-42-18-pm.png) | ![Service Breakdown](docs/images/screenshot-2025-04-24-2-42-51-pm.png) |
 | *Daily Cost Trends Visualization* | *Service Cost Breakdown* |
 
 ## 🏗️ Architecture
