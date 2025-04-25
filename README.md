@@ -31,7 +31,7 @@ Experience our interactive AWS Cost Dashboard:
 
 | Service Cancellation Management | Cost Explorer Information Modal |
 |:------------------------------:|:------------------------------:|
-| ![Service Cancellation](docs/images/screenshot-2025-04-24-2-42-24-pm.png) | ![Cost Explorer Modal](docs/images/screenshot-2025-04-24-2-42-28-pm.png) |
+| ![Service Cancellation](docs/images/screenshot-2025-04-24-2-42-24-pm.png) | ![Cost Explorer Modal](docs/images/screenshot-2025-04-25-16-23-07-pm.png) |
 | *Service Cancellation Management* | *Cost Explorer Information Modal* |
 
 | Daily Cost Trends Visualization | Service Cost Breakdown |
