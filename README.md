@@ -24,19 +24,19 @@ A comprehensive dashboard for analyzing AWS costs, tracking service usage, and m
 
 Experience our interactive AWS Cost Dashboard:
 
-![Dashboard Overview](docs/images/Screenshot%202025-04-24%20at%202.42.18%20PM.png)
+![Dashboard Overview](docs/images/screenshot-2025-04-24-2-42-18-pm.png)
 *AWS Cost Dashboard Overview*
 
 ### Key Features in Action
 
 | Service Cancellation Management | Cost Explorer Information Modal |
 |:------------------------------:|:------------------------------:|
-| ![Service Cancellation](docs/images/Screenshot%202025-04-24%20at%202.42.24%20PM.png) | ![Cost Explorer Modal](docs/images/Screenshot%202025-04-24%20at%202.42.28%20PM.png) |
+| ![Service Cancellation](docs/images/screenshot-2025-04-24-2-42-24-pm.png) | ![Cost Explorer Modal](docs/images/screenshot-2025-04-24-2-42-28-pm.png) |
 | *Service Cancellation Management* | *Cost Explorer Information Modal* |
 
 | Daily Cost Trends Visualization | Service Cost Breakdown |
 |:------------------------------:|:----------------------:|
-| ![Daily Cost Trends](docs/images/Screenshot%202025-04-24%20at%202.42.32%20PM.png) | ![Service Breakdown](docs/images/Screenshot%202025-04-24%20at%202.42.51%20PM.png) |
+| ![Daily Cost Trends](docs/images/screenshot-2025-04-24-2-42-32-pm.png) | ![Service Breakdown](docs/images/screenshot-2025-04-24-2-42-51-pm.png) |
 | *Daily Cost Trends Visualization* | *Service Cost Breakdown* |
 
 ## 🏗️ Architecture
