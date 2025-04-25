@@ -30,8 +30,7 @@ class HTMLReportAdapter(ReportGeneratorPort):
         self.report_data = {}
         
         # Set up Jinja2 environment
-        package_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        self.template_dir = os.path.join(package_dir, 'templates')
+        self.template_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
         self.env = Environment(loader=FileSystemLoader(self.template_dir))
         
         # Initialize resource scanner for generating URLs
@@ -235,6 +234,15 @@ class HTMLReportAdapter(ReportGeneratorPort):
                     }
         
         self.report_data['service_resources'] = service_resources
+        
+        # Force pay-as-you-go status for specific services (final override)
+        for service in self.report_data.get('service_costs', []):
+            if service['name'] in ['Amazon Rekognition', 'Amazon Transcribe', 'Amazon Polly', 
+                                  'Amazon Textract', 'Amazon Comprehend', 'Amazon Translate',
+                                  'Amazon Lex', 'AWS CodeWhisperer', 'Amazon Kendra']:
+                service['status'] = 'Pay-As-You-Go'
+                service['cancelled_on'] = None
+                service['is_pay_as_you_go'] = True
         
         # Get the template
         template = self.env.get_template('report_template.html')

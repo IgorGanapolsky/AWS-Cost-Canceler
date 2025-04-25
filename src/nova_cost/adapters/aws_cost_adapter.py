@@ -11,10 +11,12 @@ import datetime
 from typing import Dict, List, Tuple, Any, Optional
 from pathlib import Path
 from dotenv import load_dotenv
+import logging
 
 from ..domain.ports import CostDataPort
 from ..utils.aws_resource_scanner import AWSResourceScanner
 from ..utils.aws_billing_detective import AWSBillingDetective
+from ..utils.aws_service_classifier import AWSServiceClassifier
 
 # Load environment variables from .env file
 dotenv_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))).joinpath('.env')
@@ -29,63 +31,17 @@ class AWSCostAdapter(CostDataPort):
     
     def __init__(self):
         """Initialize the AWS adapter with boto3 client"""
-        self.ce_client = boto3.client('ce')
+        self.session = boto3.Session()
+        self.ce_client = self.session.client('ce')
         
         # Service paths with 2025 AWS Console URLs
-        self._service_paths = {
-            # AWS Billing & Cost Management
-            "AWS Cost Explorer": "https://us-east-1.console.aws.amazon.com/cost-management/home#/cost-explorer",
-            "Cost Explorer": "https://us-east-1.console.aws.amazon.com/cost-management/home#/cost-explorer",
-            "AWS Budgets": "https://us-east-1.console.aws.amazon.com/billing/home#/budgets",
-            "Tax": "https://us-east-1.console.aws.amazon.com/billing/home#/bills",
-            
-            # AWS Services
-            "OpenSearch": "https://us-east-1.console.aws.amazon.com/aos/home#/opensearch/domains",
-            "Bedrock": "https://us-east-1.console.aws.amazon.com/bedrock/home#/foundation-models",
-            "Claude": "https://us-east-1.console.aws.amazon.com/bedrock/home#/foundation-models",
-            "DynamoDB": "https://us-east-1.console.aws.amazon.com/dynamodbv2/home#tables",
-            "Lambda": "https://us-east-1.console.aws.amazon.com/lambda/home#/functions",
-            "EC2": "https://us-east-1.console.aws.amazon.com/ec2/home#Instances",
-            "S3": "https://s3.console.aws.amazon.com/s3/buckets",
-            "CloudWatch": "https://us-east-1.console.aws.amazon.com/cloudwatch/home#home:",
-            "Skill Builder": "https://us-east-1.console.aws.amazon.com/skillbuilder/home#/subscriptions",
-            "Marketplace": "https://aws.amazon.com/marketplace/management/subscriptions/metrics"
-        }
+        self._service_paths = {}
         
         # Service relationships for consolidation
-        self._service_relationships = {
-            "Claude 3.7 Sonnet": "Amazon Bedrock",
-            "Claude 3.5 Sonnet": "Amazon Bedrock",
-            "Claude 3 Haiku": "Amazon Bedrock", 
-            "Claude 3 Opus": "Amazon Bedrock"
-        }
+        self._service_consolidation = {}
         
-        # Service resources for cancellation
-        self._service_resources = {
-            "Amazon OpenSearch Service": {
-                "resources": [
-                    {
-                        "name": "View all OpenSearch domains",
-                        "url": "https://us-east-1.console.aws.amazon.com/aos/home#/opensearch/domains",
-                        "instructions": "Select any active domains and click 'Delete' to remove them"
-                    },
-                    {
-                        "name": "Billing Dashboard",
-                        "url": "https://us-east-1.console.aws.amazon.com/billing/home#/bills",
-                        "instructions": "Review OpenSearch Service charges on your bill to identify specific resources"
-                    }
-                ]
-            },
-            "Amazon Bedrock": {
-                "resources": [
-                    {
-                        "name": "Claude 3.5 Sonnet",
-                        "url": "https://us-east-1.console.aws.amazon.com/bedrock/home#/foundation-models",
-                        "instructions": "Click \"Model access\" tab, find \"Claude 3.5 Sonnet\", click \"Edit access\" and disable the model"
-                    }
-                ]
-            }
-        }
+        # Service classifier for dynamic categorization
+        self.service_classifier = AWSServiceClassifier()
         
         # Initialize AWS Resource Scanner
         self.aws_resource_scanner = AWSResourceScanner()
@@ -277,17 +233,40 @@ class AWSCostAdapter(CostDataPort):
                 cancelled_on = None
                 
                 # Check if this is a known cancelled service (seen in screenshots)
-                if "Claude" in service_name or "Bedrock" in service_name or service_name == "Amazon OpenSearch Service" or service_name == "Amazon Simple Storage Service":
+                if "Claude" in service_name or "Bedrock" in service_name or service_name == "Amazon Simple Storage Service":
                     status = "Cancelled"
                     cancelled_on = "2025-04-21"  # Use today's date
-                elif service_name in self.pay_as_you_go_services:
-                    status = "Pay-As-You-Go"
-                    cancelled_on = None
-                elif service_name in self.required_services:
-                    status = "Required"  # Mark tax as required/non-cancellable
-                    cancelled_on = None
+                elif service_name == "Amazon OpenSearch Service":
+                    try:
+                        domains = self.aws_resource_scanner.scan_for_opensearch_resources()
+                        if not domains:
+                            status = "Cancelled"
+                            cancelled_on = "2025-04-21"  # Use today's date
+                        else:
+                            status = "Active"
+                            cancelled_on = None
+                    except Exception as e:
+                        # Fallback: if resource scan fails, mark as Active and log warning
+                        print(f"Warning: OpenSearch resource scan failed: {e}")
+                        status = "Active"
+                        cancelled_on = None
                 else:
-                    status = "Active"
+                    # Dynamically classify the service
+                    classification = self.service_classifier.get_service_classification(service_name)
+                    if classification == 'Pay-As-You-Go':
+                        status = "Pay-As-You-Go"
+                        cancelled_on = None
+                    elif classification == 'Required':
+                        status = "Required"
+                        cancelled_on = None
+                    else:
+                        status = "Active"
+                        cancelled_on = None
+                
+                # Force pay-as-you-go status for specific services regardless of other logic
+                if clean_service_name in ['Amazon Rekognition', 'Amazon Transcribe', 'Amazon Polly', 
+                                   'Amazon Textract', 'Amazon Comprehend', 'Amazon Translate']:
+                    status = 'Pay-As-You-Go'
                     cancelled_on = None
                 
                 # Get console URL for verification
@@ -460,7 +439,7 @@ class AWSCostAdapter(CostDataPort):
         Returns:
             Dictionary mapping services to their parent services
         """
-        return self._service_relationships
+        return self._service_consolidation
     
     def get_service_resources(self) -> Dict[str, Dict]:
         """
@@ -470,7 +449,7 @@ class AWSCostAdapter(CostDataPort):
             Nested dictionary of service resources with dynamic discovery
         """
         # Create a copy of the static service resources
-        dynamic_resources = self._service_resources.copy()
+        dynamic_resources = {}
         
         try:
             # For OpenSearch, dynamically find actual resources

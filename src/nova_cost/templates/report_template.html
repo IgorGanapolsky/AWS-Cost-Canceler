@@ -269,7 +269,7 @@
                                     <span class="badge bg-danger">Cancelled</span>
                                     {% elif service.status == 'Required' %}
                                     <span class="badge bg-secondary">Required</span>
-                                    {% elif service.status == 'Pay-As-You-Go' %}
+                                    {% elif service.name == 'Amazon Rekognition' or service.name == 'Amazon Transcribe' %}
                                     <span class="badge bg-info">Pay-As-You-Go</span>
                                     {% else %}
                                     <span class="badge bg-success">Active</span>
@@ -279,7 +279,7 @@
                                     {% if service.status == 'Cancelled' %}
                                     Cancelled on:<br>
                                     <span class="text-danger">{{ service.cancelled_on }}</span>
-                                    {% elif service.status == 'Pay-As-You-Go' %}
+                                    {% elif service.name == 'Amazon Rekognition' or service.name == 'Amazon Transcribe' %}
                                     <span class="text-info">Usage-based</span>
                                     {% endif %}
                                 </td>
@@ -299,7 +299,7 @@
                                     <button class="btn btn-sm btn-info" onclick="showCostExplorerInfo()">
                                         <i class="fas fa-search"></i> Investigate API Usage
                                     </button>
-                                    {% elif service.status == 'Pay-As-You-Go' %}
+                                    {% elif service.name == 'Amazon Rekognition' or service.name == 'Amazon Transcribe' %}
                                     <button class="btn btn-sm btn-warning" onclick="showPayAsYouGoInfo('{{ service.name }}')">
                                         <i class="fas fa-info-circle"></i> Manage Usage
                                     </button>
@@ -617,7 +617,7 @@
         // Function to display guidance for pay-as-you-go services
         function showPayAsYouGoInfo(serviceName) {
             // Create modal content based on service
-            let modalTitle, resourceTypes, cleanupSteps;
+            let modalTitle, resourceTypes, cleanupSteps, consoleLinks;
             
             if (serviceName === 'Amazon Rekognition') {
                 modalTitle = 'Managing Amazon Rekognition Usage';
@@ -637,6 +637,22 @@
                     <li>Review your application code to ensure it's not making unnecessary API calls</li>
                     <li>Consider implementing usage limits or alarms to prevent unexpected charges</li>
                 `;
+                consoleLinks = `
+                    <div class="d-flex flex-wrap gap-2 mt-3 mb-4">
+                        <a href="https://us-east-1.console.aws.amazon.com/rekognition/home?region=us-east-1#/face-collections" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-database"></i> Manage Face Collections
+                        </a>
+                        <a href="https://us-east-1.console.aws.amazon.com/rekognition/home?region=us-east-1#/stream-processors" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-video"></i> Manage Stream Processors
+                        </a>
+                        <a href="https://us-east-1.console.aws.amazon.com/rekognition/home?region=us-east-1#/custom-labels-models" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-tag"></i> Manage Custom Labels
+                        </a>
+                        <a href="https://console.aws.amazon.com/cloudtrail/home?region=us-east-1#/events?EventSource=rekognition.amazonaws.com" class="btn btn-secondary" target="_blank">
+                            <i class="fas fa-history"></i> View API Call History
+                        </a>
+                    </div>
+                `;
             } else if (serviceName === 'Amazon Transcribe') {
                 modalTitle = 'Managing Amazon Transcribe Usage';
                 resourceTypes = `
@@ -655,6 +671,22 @@
                     <li>Transcribed audio/video files in S3 will continue to incur S3 storage costs</li>
                     <li>Review your application code to ensure it's not submitting new transcription jobs</li>
                 `;
+                consoleLinks = `
+                    <div class="d-flex flex-wrap gap-2 mt-3 mb-4">
+                        <a href="https://us-east-1.console.aws.amazon.com/transcribe/home?region=us-east-1#/custom-vocabulary" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-book"></i> Manage Custom Vocabularies
+                        </a>
+                        <a href="https://us-east-1.console.aws.amazon.com/transcribe/home?region=us-east-1#/custom-language-model" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-language"></i> Manage Language Models
+                        </a>
+                        <a href="https://us-east-1.console.aws.amazon.com/transcribe/home?region=us-east-1#/vocabulary-filtering" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-filter"></i> Manage Vocabulary Filters
+                        </a>
+                        <a href="https://console.aws.amazon.com/cloudtrail/home?region=us-east-1#/events?EventSource=transcribe.amazonaws.com" class="btn btn-secondary" target="_blank">
+                            <i class="fas fa-history"></i> View API Call History
+                        </a>
+                    </div>
+                `;
             }
             
             // Create modal HTML
@@ -670,6 +702,9 @@
                             <i class="fas fa-info-circle"></i> <strong>${serviceName} is a pay-as-you-go service.</strong> 
                             There is no formal "cancellation" process - you are only charged when you make API calls or have persistent resources.
                         </div>
+                        
+                        <h6>AWS Console Actions:</h6>
+                        ${consoleLinks}
                         
                         <h6>Persistent Resource Types:</h6>
                         <ul>${resourceTypes}</ul>
@@ -790,109 +825,11 @@
         }
     </script>
     
-    <!-- Simple inline cancellation script guaranteed to work -->
-    <script>
-        function getUserConfirmation(serviceName) {
-            return confirm(`Are you sure you want to request cancellation for ${serviceName}?`);
-        }
-        
-        function cancelService(serviceName, element) {
-            if (!getUserConfirmation(serviceName)) {
-                return;
-            }
-            
-            const payAsYouGoServices = [
-                'Amazon Rekognition', 
-                'Amazon Transcribe', 
-                'Amazon Textract', 
-                'Amazon Comprehend',
-                'Amazon Polly',
-                'Amazon Translate'
-            ];
-            
-            const isPayAsYouGo = payAsYouGoServices.includes(serviceName);
-            const cancellationDate = new Date().toISOString().split('T')[0];
-            
-            // Get the closest row to update UI
-            const row = element.closest('tr');
-            
-            // Create cancellation badge with different text based on service type
-            const cancellationBadge = document.createElement('span');
-            cancellationBadge.className = 'badge cancelled';
-            cancellationBadge.innerText = 'Cancelled';
-            
-            // Replace the button with the badge
-            element.parentNode.replaceChild(cancellationBadge, element);
-            
-            // Update the status in the table
-            const statusCell = row.querySelector('.service-status');
-            if (statusCell) {
-                // Clear status cell
-                statusCell.innerHTML = '';
-                
-                // Create cancelled status with date
-                const cancelledElement = document.createElement('div');
-                cancelledElement.className = 'cancelled-status';
-                cancelledElement.innerHTML = `
-                    <div>Cancelled on:</div>
-                    <div>${cancellationDate}</div>
-                `;
-                statusCell.appendChild(cancelledElement);
-            }
-            
-            // Show different guidance based on service type
-            if (isPayAsYouGo) {
-                // For pay-as-you-go services, show resource cleanup guidance
-                let cleanupGuidance = `<div class="cancellation-progress">
-                    <strong>To fully stop ${serviceName} charges:</strong>
-                    <ol style="padding-left: 20px; margin-top: 5px;">`;
-                
-                if (serviceName === 'Amazon Rekognition') {
-                    cleanupGuidance += `
-                        <li>Delete any Collections: <code>aws rekognition delete-collection --collection-id COLLECTION_ID</code></li>
-                        <li>Stop any Stream Processors: <code>aws rekognition stop-stream-processor --name PROCESSOR_NAME</code></li>
-                        <li>Stop any Custom Labels Models: <code>aws rekognition stop-project-version --project-version-arn MODEL_ARN</code></li>
-                    `;
-                } else if (serviceName === 'Amazon Transcribe') {
-                    cleanupGuidance += `
-                        <li>Delete any Custom Vocabularies: <code>aws transcribe delete-vocabulary --vocabulary-name VOCABULARY_NAME</code></li>
-                        <li>Delete any Custom Language Models: <code>aws transcribe delete-language-model --model-name MODEL_NAME</code></li>
-                        <li>Delete any Vocabulary Filters: <code>aws transcribe delete-vocabulary-filter --vocabulary-filter-name FILTER_NAME</code></li>
-                    `;
-                } else {
-                    cleanupGuidance += `
-                        <li>Delete any persistent resources (if applicable)</li>
-                        <li>Review your application code to ensure it's not making unnecessary API calls</li>
-                        <li>Consider implementing usage limits or alarms to prevent unexpected charges</li>
-                    `;
-                }
-                
-                cleanupGuidance += `</ol></div>`;
-                row.querySelector('.service-actions').innerHTML += cleanupGuidance;
-            } else {
-                // For subscription services, show standard cancellation message
-                row.querySelector('.service-actions').innerHTML += `
-                    <div class="cancellation-progress">
-                        Cancellation requested. Please check your AWS billing dashboard after 24 hours to verify.
-                    </div>
-                `;
-            }
-            
-            // Save the cancellation status to localStorage
-            let cancelledServices = JSON.parse(localStorage.getItem('cancelledServices') || '{}');
-            cancelledServices[serviceName] = {
-                date: cancellationDate,
-                isPayAsYouGo: isPayAsYouGo
-            };
-            localStorage.setItem('cancelledServices', JSON.stringify(cancelledServices));
-            
-            // Update total cancelled services counter
-            updateCancellationCounter();
-        }
-    </script>
-    
     <!-- Custom JavaScript files -->
     <script src="static/js/report.js"></script>
+    <script src="static/js/dashboard.js"></script>
+    <script src="static/js/chart-config.js"></script>
+    <script src="static/js/pay-as-you-go-override.js"></script>
     
     <!-- Add script for Cost Explorer info modal -->
     <script>
@@ -943,7 +880,7 @@
                     const serviceRows = document.querySelectorAll('#servicesTableBody tr');
                     serviceRows.forEach(row => {
                         const serviceNameCell = row.querySelector('td:nth-child(1)');
-                        if (serviceNameCell.textContent.trim() === serviceName) {
+                        if (serviceNameCell && serviceNameCell.textContent.trim() === serviceName) {
                             // Update status cell
                             const statusCell = row.querySelector('td:nth-child(4)');
                             statusCell.innerHTML = '<span class="badge bg-danger">Cancelled</span>' +
@@ -989,8 +926,29 @@
             if (cancellationStatus) {
                 console.log('Found saved cancellations:', cancellationStatus);
                 const parsedStatus = JSON.parse(cancellationStatus);
+                
+                // Define pay-as-you-go services that should never be marked as "Cancelled"
+                const payAsYouGoServices = [
+                    'Amazon Rekognition', 
+                    'Amazon Transcribe', 
+                    'Amazon Polly',
+                    'Amazon Textract',
+                    'Amazon Comprehend',
+                    'Amazon Translate',
+                    'Amazon Lex',
+                    'AWS CodeWhisperer',
+                    'Amazon Kendra'
+                ];
+                
                 Object.keys(parsedStatus).forEach(serviceName => {
                     console.log('Applying cancellation for:', serviceName);
+                    
+                    // Skip applying "Cancelled" status to pay-as-you-go services
+                    if (payAsYouGoServices.includes(serviceName)) {
+                        console.log(`Skipping cancellation override for pay-as-you-go service: ${serviceName}`);
+                        return;
+                    }
+                    
                     const cancellationDate = parsedStatus[serviceName].cancelledOn;
                     const consoleUrl = parsedStatus[serviceName].consoleUrl;
                     const rows = document.querySelectorAll('#servicesTableBody tr');

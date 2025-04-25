@@ -25,7 +25,7 @@ A comprehensive dashboard for analyzing AWS costs, tracking service usage, and m
 Experience our interactive AWS Cost Dashboard:
 
 <div align="center">
-  <img src="docs/images/Screenshot 2025-04-24 at 2.42.18 PM.png" alt="Dashboard Overview" width="800"/>
+  <img src="docs/images/Screenshot%202025-04-24%20at%202.42.18%20PM.png" alt="Dashboard Overview" width="800"/>
   <p><em>AWS Cost Dashboard Overview</em></p>
 </div>
 
@@ -34,21 +34,21 @@ Experience our interactive AWS Cost Dashboard:
 <table>
   <tr>
     <td width="50%">
-      <img src="docs/images/Screenshot 2025-04-24 at 2.42.24 PM.png" alt="Service Cancellation" width="400"/>
+      <img src="docs/images/Screenshot%202025-04-24%20at%202.42.24%20PM.png" alt="Service Cancellation" width="400"/>
       <p align="center"><em>Service Cancellation Management</em></p>
     </td>
     <td width="50%">
-      <img src="docs/images/Screenshot 2025-04-24 at 2.42.28 PM.png" alt="Cost Explorer Modal" width="400"/>
+      <img src="docs/images/Screenshot%202025-04-24%20at%202.42.28%20PM.png" alt="Cost Explorer Modal" width="400"/>
       <p align="center"><em>Cost Explorer Information Modal</em></p>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="docs/images/Screenshot 2025-04-24 at 2.42.32 PM.png" alt="Daily Cost Trends" width="400"/>
+      <img src="docs/images/Screenshot%202025-04-24%20at%202.42.32%20PM.png" alt="Daily Cost Trends" width="400"/>
       <p align="center"><em>Daily Cost Trends Visualization</em></p>
     </td>
     <td width="50%">
-      <img src="docs/images/Screenshot 2025-04-24 at 2.42.51 PM.png" alt="Service Breakdown" width="400"/>
+      <img src="docs/images/Screenshot%202025-04-24%20at%202.42.51%20PM.png" alt="Service Breakdown" width="400"/>
       <p align="center"><em>Service Cost Breakdown</em></p>
     </td>
   </tr>

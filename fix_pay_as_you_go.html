@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AWS Cost Canceler Fix</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .btn {
+            padding: 10px 15px;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .info {
+            background-color: #e7f3fe;
+            border-left: 6px solid #2196F3;
+            padding: 10px;
+            margin: 20px 0;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>AWS Cost Canceler Fix: Pay-As-You-Go Services</h1>
+    
+    <div class="info">
+        <p>This utility will fix the display of pay-as-you-go services like Amazon Rekognition and Amazon Transcribe 
+           in your dashboard reports by clearing any incorrect cancellation status from local storage.</p>
+    </div>
+    
+    <h2>Problem</h2>
+    <p>Pay-as-you-go services like Amazon Rekognition and Amazon Transcribe are incorrectly showing as "Cancelled" 
+       with "Verify" buttons, when they should show as "Pay-As-You-Go" with "Manage Usage" buttons.</p>
+    
+    <h2>Fix</h2>
+    <button id="fixButton" class="btn">Fix Pay-As-You-Go Services</button>
+    <div id="result" style="margin-top: 20px;"></div>
+    
+    <script>
+        document.getElementById('fixButton').addEventListener('click', function() {
+            // Get existing cancellation data
+            let cancelledServices = JSON.parse(localStorage.getItem('cancelledServices') || '{}');
+            
+            // List of pay-as-you-go services that should never be cancelled
+            const payAsYouGoServices = [
+                'Amazon Rekognition', 
+                'Amazon Transcribe', 
+                'Amazon Polly',
+                'Amazon Textract',
+                'Amazon Comprehend',
+                'Amazon Translate',
+                'Amazon Lex',
+                'AWS CodeWhisperer',
+                'Amazon Kendra'
+            ];
+            
+            // Remove pay-as-you-go services from the cancelled list
+            let removedServices = [];
+            payAsYouGoServices.forEach(service => {
+                if (cancelledServices[service]) {
+                    removedServices.push(service);
+                    delete cancelledServices[service];
+                }
+            });
+            
+            // Save the updated list back to localStorage
+            localStorage.setItem('cancelledServices', JSON.stringify(cancelledServices));
+            
+            // Show result
+            const resultDiv = document.getElementById('result');
+            if (removedServices.length > 0) {
+                resultDiv.innerHTML = `
+                    <h3>✅ Fix Applied Successfully</h3>
+                    <p>The following pay-as-you-go services will now display correctly:</p>
+                    <ul>
+                        ${removedServices.map(service => `<li>${service}</li>`).join('')}
+                    </ul>
+                    <p>Please regenerate your cost report or refresh any open reports to see the changes.</p>
+                    <button class="btn" onclick="window.location.href='data/reports/aws_cost_report_2025-04-25.html'">
+                        View Latest Report
+                    </button>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <h3>ℹ️ No Changes Needed</h3>
+                    <p>No pay-as-you-go services were found in your cancelled services list.</p>
+                    <p>If you're still seeing issues, please regenerate your cost report.</p>
+                    <button class="btn" onclick="window.location.href='data/reports/aws_cost_report_2025-04-25.html'">
+                        View Latest Report
+                    </button>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
