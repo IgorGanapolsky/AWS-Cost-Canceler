@@ -24,7 +24,7 @@ A comprehensive dashboard for analyzing AWS costs, tracking service usage, and m
 
 Experience our interactive AWS Cost Dashboard:
 
-![Dashboard Overview](docs/images/screenshot-2025-04-24-2-42-24-pm.png)
+![Dashboard Overview](docs/images/screenshot-2025-04-24-2-42-18-pm.png)
 *AWS Cost Dashboard Overview*
 
 ### Key Features in Action
