@@ -234,8 +234,9 @@ This repository follows modern GitHub best practices:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Contact
+## ☎️ Contact
 
-Igor Ganapolsky - [@iganapolsky](https://twitter.com/iganapolsky)
+Igor Ganapolsky  
+[X.com](https://x.com/IgorGanapolsky) · [LinkedIn](https://www.linkedin.com/in/igor-ganapolsky-5324b7330/)
 
-Project Link: [https://github.com/aws/nova-act](https://github.com/aws/nova-act)
+Project Link: https://github.com/aws/nova-act
