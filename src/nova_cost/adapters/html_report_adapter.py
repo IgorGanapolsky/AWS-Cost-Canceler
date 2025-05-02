@@ -31,7 +31,7 @@ class HTMLReportAdapter(ReportGeneratorPort):
         
         # Set up Jinja2 environment
         self.template_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
-        self.env = Environment(loader=FileSystemLoader(self.template_dir))
+        self.env = Environment(loader=FileSystemLoader(self.template_dir), autoescape=True)
         
         # Initialize resource scanner for generating URLs
         self.resource_scanner = AWSResourceScanner()
