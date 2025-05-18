@@ -16,7 +16,6 @@ import os
 import sys
 import re
 import time
-import random
 import string
 import argparse
 from pathlib import Path
@@ -24,6 +23,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from nova_act import NovaAct
+import secrets
 
 # Load environment variables
 dotenv_path = Path(__file__).parent / '.env'
@@ -45,7 +45,7 @@ def generate_bucket_name(base_name=None):
     
     # Add timestamp and random suffix for uniqueness
     timestamp = datetime.now().strftime('%Y%m%d')
-    rand_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    rand_suffix = ''.join(secrets.SystemRandom().choices(string.ascii_lowercase + string.digits, k=6))
     
     # Combine to create unique bucket name (limited to 63 characters)
     bucket_name = f"{base_name}-{timestamp}-{rand_suffix}"

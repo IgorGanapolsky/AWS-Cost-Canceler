@@ -18,7 +18,6 @@ import sys
 import argparse
 import json
 import re
-import random
 import string
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +29,7 @@ from nova_act.samples.aws.scripts.aws_cost_monitor import AWSCostMonitor
 from nova_act.samples.aws.scripts.aws_service_canceler_boto3 import AWSServiceCancelerBoto3
 from nova_act.samples.aws.scripts.html_report_generator import HTMLReportGenerator
 from nova_act.samples.aws.scripts.s3_report_hosting import S3ReportHosting
+import secrets
 
 # Load environment variables from .env file
 dotenv_path = Path(__file__).parent / '.env'
@@ -831,7 +831,7 @@ class AWSMasterController:
 
         # Add timestamp and random suffix for uniqueness
         timestamp = datetime.now().strftime('%Y%m%d')
-        rand_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+        rand_suffix = ''.join(secrets.SystemRandom().choices(string.ascii_lowercase + string.digits, k=6))
 
         # Combine to create unique bucket name (limited to 63 characters)
         bucket_name = f"{base_name}-{timestamp}-{rand_suffix}"
